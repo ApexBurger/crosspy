@@ -10,6 +10,14 @@
 # strain1=get_strain(displacement1,rotation1,strain_method=0) #array
 # plot_strains(strain_1)
 
+#Settings:
+
+roi = dict(
+    size_pass = 200,
+    overlap_pass = 70/100
+
+)
+
 #%%
 %load_ext autoreload
 %autoreload 2
@@ -25,4 +33,6 @@ Images = Imset(folder_path,'tif')
 #example: this doesn't need to be in deck
 ims = Images.imload([0,1])
 
-# %%
+#%% Generate filters
+
+fftfil, hfil = Imset.gen_filters(roi[size_pass])

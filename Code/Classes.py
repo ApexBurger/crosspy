@@ -30,7 +30,7 @@ class Imset:
 
             #loads a 2D array then adds on a new axis
             imarray=np.expand_dims(imarray,-1)
-                        #concatenate all the arrays
+            #concatenate all the arrays
             if i==0:
                 imarray_stack=np.array(imarray)
             else:
@@ -39,24 +39,18 @@ class Imset:
 
 
     def conv_greyscale(self):
-
         # This converts a loaded image to greyscale
-
         imarray =
-
         imarray_conv = 
-
-
 
         return imarray_conv
 
-    # Filter settings are currently only definable here:
-    filter_settings = [4,2,16,32]
+    # Filter settings are currently only definable here as default keyword
     # TO DO - GUI to help user chose the filter
 
-    def gen_filters(self, size_pass, overlap_pass):
+    def gen_filters(self, size_pass, filter_settings=[4,2,16,32]):
         # Inputs:
-        #   roisize = subset size - (128, 256 etc.)
+        #   size_pass = subset size - (128, 256 etc.)
         #   fpasset = [high pass cut off, high pass width, low pass cut off, low pass width]
         # outputs:
         #   fftfilter = non idea (gaussian) band pass filter
@@ -68,24 +62,25 @@ class Imset:
         sqrt = np.sqrt
         exp = np.exp
 
-        lcutoff = fpassset[2]
-        lwidth = fpassset[3]/2
-        hcutoff = fpassset[0]
-        hwidth = fpassset[1]/2
+        lcutoff = filter_settings[2]
+        lwidth = filter_settings[3]/2
+        hcutoff = filter_settings[0]
+        hwidth = filter_settings[1]/2
 
         if lcutoff < hcutoff:
             print('low pass filter smaller than high pass filter')
             return
 
         # generate square grid
-        u = range(0, roisize)
+        u = range(0, size_pass)
+
         # meshgrid function
         meshv, meshu = np.meshgrid(u,u)
-        meshvf = meshv-roisize/2-0.5
-        meshuf = meshu-roisize/2-0.5
+        meshvf = meshv-size_pass/2-0.5
+        meshuf = meshu-size_pass/2-0.5
 
         # create Hann window
-        hfilter = (cos(((pi*(meshuf)/roisize)))*(cos((pi*meshvf/roisize))))
+        hfilter = (cos(((pi*(meshuf)/size_pass)))*(cos((pi*meshvf/size_pass))))
 
         # create fft filter
         distf = sqrt((meshvf*meshvf)+(meshuf*meshuf))
@@ -107,14 +102,11 @@ class Imset:
         
         return fftfilter, hfilter
 
+    def cross_correlate(self, fftfilter, hfilter):
+        # Cross correlate below
+        pass
 
 
-        
-
-
-
-
-
-
-
-
+    def strain_calc()
+        # strain calc based on deformation map
+        pass
