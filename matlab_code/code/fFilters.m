@@ -8,10 +8,13 @@ function [FFTfilter,hfilter] = fFilters(roisize,fpassset)
 %   OUTPUTS
 %   fftfilter - non idea (gaussian) band pass filter
 %   hfilter   - hanning filter
-lcutoff=fpassset(3);
-lwidth=fpassset(4)/2;
+
 hcutoff=fpassset(1);
 hwidth=fpassset(2)/2;
+
+lcutoff=fpassset(3);
+lwidth=fpassset(4)/2;
+
 
 if lcutoff < hcutoff
     error('The low pass filter is smaller than the high pass filter');
