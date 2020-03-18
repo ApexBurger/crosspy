@@ -3,58 +3,39 @@
 # Written by Alexander Bergsmo at Imperial College London 2020
 
 from PIL import Image
-
 import numpy as np
-
-import os
-
-import filters
-
 
 class Imset:
 
     # This instantiates a DIC image class which performs all necessary
-
     # operations on the dic image and gives it parameters
-
     # This class will allow images to be read and converted to DICable images
-
     # DIm classes have certain traits which will simplify DIC operations
 
-    def __init__(self, filename, filepath, imageorder):
+    def __init__(self, folder_path,extension):
 
-        self.filename = filename # this is confusing
+        self.path = folder_path
+        self.extension = extension
+        self.imagepaths = sorted(self.path.glob('*.'+extension))
 
-        self.path = filepath
+    def imload(self,numbers):
+        # This loads the images provided by 'numbers'
+        for i, n in enumerate(numbers):
 
-        self.ftype = filename.split('.')[-1]
+            path=self.imagepaths[n]
+            #open as grayscale
+            image=Image.open(str(path))
+            imarray=np.array(image)
+            imarray=np.squeeze(imarray)
 
-        self.files = [i for i in os.dir(self.path)]
-
-
-
-
-
-    def imload(self):
-
-        # This loads the images
-
-        im_list = []
-
-         #needs to get the files
-
-            
-
-
-
-        if self.ftype == 'tiff' or self.ftype == 'tif':
-
-            imarray = Image.
-
-
-
-        return imarray
-
+            #loads a 2D array then adds on a new axis
+            imarray=np.expand_dims(imarray,-1)
+                        #concatenate all the arrays
+            if i==0:
+                imarray_stack=np.array(imarray)
+            else:
+                imarray_stack=np.concatenate((imarray_stack,imarray),axis=2)
+        return imarray_stack
 
 
     def conv_greyscale(self):
@@ -74,7 +55,7 @@ class Imset:
     # TO DO - GUI to help user chose the filter
 
     def gen_filters(self, size_pass, overlap_pass):
-            # Inputs:
+        # Inputs:
         #   roisize = subset size - (128, 256 etc.)
         #   fpasset = [high pass cut off, high pass width, low pass cut off, low pass width]
         # outputs:
@@ -103,31 +84,26 @@ class Imset:
         meshvf = meshv-roisize/2-0.5
         meshuf = meshu-roisize/2-0.5
 
-
         # create Hann window
         hfilter = (cos(((pi*(meshuf)/roisize)))*(cos((pi*meshvf/roisize))))
 
         # create fft filter
-
         distf = sqrt((meshvf*meshvf)+(meshuf*meshuf))
 
         # lowpass
         lfftfilter = exp(-((distf-lcutoff)/sqrt(2)*lwidth/2)**2)
-        # need to iterate through the array to satisfy expression:
         lfftfilter[distf > (lcutoff+2*lwidth)] = 0
         lfftfilter[distf < (lcutoff+2*lwidth)] = 1
-        # distf < lcutoff = 1
+
 
         # highpass
-
         hfftfilter = exp(-((hcutoff-distf)/sqrt(2)*hwidth/2))**2
         hfftfilter[distf < (hcutoff-2*hwidth)] = 0
         hfftfilter[distf > hcutoff] = 1
 
         # combine
-
         fftfilter = hfftfilter*lfftfilter
-        fftfilter = np.fft.fftshift(fftfilter) #THIS IS A MATLAB FUNCTION - find python equivalent
+        fftfilter = np.fft.fftshift(fftfilter)
         
         return fftfilter, hfilter
 
@@ -137,8 +113,8 @@ class Imset:
 
 
 
-class im(imset):
 
-    # image sub class - will contain information of individual images
 
-    pass
+
+
+
