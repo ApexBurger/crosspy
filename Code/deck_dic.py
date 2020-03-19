@@ -22,16 +22,21 @@ roi = dict(
 %load_ext autoreload
 %autoreload 2
 
+roi = dict(size_pass = 200,overlap_pass = 70/100)
+
 import os as o
 o.chdir('/Users/tom/Documents/GitHub/crosspy/Code')
 from Classes import *
+from DataPrep_Functions import *
 from pathlib import Path
 
 folder_path = Path(r"/Users/tom/Documents/GitHub/crosspy/data")
 Images = Imset(folder_path,'tif')
 
-#example: this doesn't need to be in deck
+#examples: these dont need to be in deck
 ims = Images.imload([0,1])
+fftfil, hfil = gen_filters(roi['size_pass'])
+ss_locations=gen_ROIs(ims.shape[0:2],256,0.5)
 
 #%% Generate filters
 
