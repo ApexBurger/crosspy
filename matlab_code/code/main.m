@@ -50,7 +50,7 @@ Image_first                = im2double(imread([Image_folder,Image_list{1}]));
 Filters_setting            = round(Filters_setting); %this is needed within EBSD script
 [FFTfilter,hfilter]        = fFilters(ROI.size_pass_1,Filters_setting); %converst to fourier space
 
-% spread out the subregions in the defined ROI and set up the position of ROIs
+%% spread out the subregions in the defined ROI and set up the position of ROIs
 
 [ROI.position_X_pass_1, ROI.position_Y_pass_1,ROI.num_x_pass_1,ROI.num_y_pass_1, ROI.coordinator_pass_1, ROI.num_pass_1] = fDIC_ROI_position(ROI.size_pass_1,ROI.overlap_pass_1,boundary);
 

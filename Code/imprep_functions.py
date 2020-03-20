@@ -1,12 +1,18 @@
+# Bergsmo & McAuliffe 2020
+
 import numpy as np
 
-def gen_filters(size_pass, filter_settings=[4,2,16,32]):
+def gen_filters(roi, filter_settings=[4,2,16,32]):
+    #genearte FFT filters
+
     # Inputs:
     #   size_pass = subset size - (128, 256 etc.)
     #   fpasset = [high pass cut off, high pass width, low pass cut off, low pass width]
     # outputs:
     #   fftfilter = non idea (gaussian) band pass filter
     #   hfilter = hanning filter
+
+    size_pass=roi['size_pass']
 
     pi = np.pi
     cos = np.cos
@@ -54,11 +60,18 @@ def gen_filters(size_pass, filter_settings=[4,2,16,32]):
     
     return fftfilter, hfilter
 
-def gen_ROIs(imshape,size_pass,overlap):
+def gen_ROIs(imshape,roi):
+    #generate where the subsets are for an arbitrary image size
     
+    size_pass=roi['size_pass']
+    overlap=roi['overlap_pass']
+
     rows=imshape[0]
     cols=imshape[1]
+
     spacing = round(size_pass*(1-overlap))
+    #add this to the roi dictionary
+    roi['spacing']=spacing
     
     #size_pass = subset size = 128,256 etc, overlap = proportion, eg 0.5, image1 and image2 must be same shape
     col_remainder=cols%spacing
@@ -68,13 +81,27 @@ def gen_ROIs(imshape,size_pass,overlap):
     n_row_sets=int((rows-row_remainder)/spacing) #number of subsets in vertical direction
 
     #generate an array of subset locations [top L corner row, top L corner col] - can get bot R row and col from known subset size
-    ss_locations=np.zeros((n_row_sets*n_col_sets,2))
+    ss_locations=np.zeros((n_row_sets*n_col_sets,2),dtype=np.int8)
     for c in range(0,n_col_sets):
         for r in range(0,n_row_sets):
             i = c*n_row_sets+r #index in this list
             #print(c,r)
-            ss_locations[i,:]=np.array([r*spacing,c*spacing])
+            ss_locations[i,:]=np.array([r*spacing,c*spacing],dtype=np.int8)
     
     return ss_locations
+
+
+def get_subset(ims,roi,ss_locations,n,imno,norm=True):
+    #actually load a subset from a stacked numpy array of images (imno is number in stack, n is subset number in ss_locations)
+    
+    subset=ims[ss_locations[n,0]:ss_locations[n,0]+roi['size_pass'],ss_locations[n,1]:ss_locations[n,1]+roi['size_pass'],imno]
+    
+    if norm==True:
+        #normalise
+        subset_norm=(subset-np.mean(subset))/np.std(subset)
+    else:
+        subset_norm=subset 
+
+    return subset_norm
 
 

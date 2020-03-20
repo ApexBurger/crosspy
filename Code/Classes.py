@@ -1,5 +1,4 @@
-# Classes used for the DPyC library package. 
-# Written by Alexander Bergsmo and associated legends at Imperial College London 2020
+# Bergsmo & McAuliffe 2020
 
 from PIL import Image
 import numpy as np

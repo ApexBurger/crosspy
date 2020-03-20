@@ -15,7 +15,7 @@ addpath code
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%User input%%%%%%%%%%%%%%%%%%
-Image_folder    ='D:\Alex\DIC_results\CE4511-2\Subset_test\'; % '2' is using the consetutive image as the refernce image
+Image_folder    ='/Users/tom/Desktop/data/'; % '2' is using the consetutive image as the refernce image
 DIC_method      = 2; % '1' is used as the first image as the reference image (suitable for small deformation)
 % '2' is used as the previous image as the reference image (prefered for large deformation)
 Image_Interval  = 1; %define the interval between the reference and test pattern for Method 2
