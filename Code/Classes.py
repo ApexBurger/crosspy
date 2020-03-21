@@ -4,6 +4,7 @@ from PIL import Image
 import numpy as np
 from imprep_functions import *
 from XCF_functions import *
+import matplotlib.pyplot as plt
 
 class Imset:
 
@@ -17,6 +18,8 @@ class Imset:
         self.paths = sorted(self.folder.glob('*.'+extension))
         self.names=[path.name for i,path in enumerate(self.paths)]
         self.n_ims=len(self.names)
+
+        print('Found '+str(self.n_ims)+' images')
 
     def imload(self,numbers):
         # This loads the images identifed in the Imset enumerated by 'numbers'
@@ -50,6 +53,10 @@ class DIC:
 # can't be accommodated by square subsets of given roi_size, they will be ignored).
 
     def __init__(self,imageset,roi,filter_settings):
+
+        if imageset.n_ims<1:
+            raise Exception('No images found!')
+
         self.ims=imageset.imload(range(0,imageset.n_ims))
         self.n_ims=imageset.n_ims
         self.n_rows,self.n_cols,self.ss_locations,self.ss_spacing=gen_ROIs(self.ims.shape[0:2],roi)
@@ -74,10 +81,6 @@ class DIC:
             dy_map=np.reshape(dys,(self.n_rows,self.n_cols),'F')
             ph_map=np.reshape(phs,(self.n_rows,self.n_cols),'F')
 
-        # self.ph_map=ph_map
-        # self.dx_map=dx_map
-        # self.dy_map=dy_map
-
         return dx_map,dy_map,ph_map
 
     def run_sequential(self):
@@ -90,7 +93,11 @@ class DIC:
         for i in range(0,self.n_ims-1):
             dx_maps[:,:,i],dy_maps[:,:,i],ph_maps[:,:,i]=self.run([i,i+1])
 
-        return dx_maps, dy_maps, ph_maps
+        self.ph_maps=ph_maps
+        self.dx_maps=dx_maps
+        self.dy_maps=dy_maps
+
+        #return dx_maps, dy_maps, ph_maps
 
     def run_cumulative(self):
         #Perform DIC on sequential images, using the first as a reference.
@@ -100,21 +107,31 @@ class DIC:
         dy_maps=np.zeros((self.n_rows,self.n_cols,self.n_ims-1))
 
         for i in range(0,self.n_ims-1):
-            dx_maps[:,:,i],dy_maps[:,:,i],ph_maps[:,:,i]=self.run([i,i+1])
+            dx_maps[:,:,i],dy_maps[:,:,i],ph_maps[:,:,i]=self.run([0,i+1])
+
+        self.ph_maps=ph_maps
+        self.dx_maps=dx_maps
+        self.dy_maps=dy_maps
         
-        return dx_maps, dy_maps, ph_maps
+        #return dx_maps, dy_maps, ph_maps
 
+    def plot_results(self,colmap='plasma'):
 
+        if self.ph_maps.any()==False:
+            raise Exception('No DIC results to plot!')
 
+        for i in range(0,self.n_ims-1):
+            fig,(ax11,ax12,ax13)=plt.subplots(1,3,figsize=(10,10)) 
+            ax11.imshow(self.dx_maps[:,:,i],cmap=colmap)
+            ax11.set_title('X-displacements, map '+str(i+1))
+            ax12.imshow(self.dy_maps[:,:,i],cmap=colmap)
+            ax12.set_title('Y-displacements, map '+str(i+1))
+            ax13.imshow(self.ph_maps[:,:,i],cmap=colmap)
+            ax13.set_title('CC peak heights, map '+str(i+1))
 
-
-
-
-    def strain_calc():
+    def strain_calc(self):
         # strain calc based on deformation map
         pass
-
-
 
 class Im(Imset):
 
