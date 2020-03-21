@@ -38,6 +38,18 @@ ims = Images.imload([0,1])
 fftfil, hfil = gen_filters(roi['size_pass'])
 ss_locations=gen_ROIs(ims.shape[0:2],256,0.5)
 
-#%% Generate filters
+#%% Generate filters - ALEX
 
-fftfil, hfil = Imset.gen_filters(roi[size_pass])
+fftfil, hfil = Imset.gen_filters(roi['size_pass'])
+
+#%% Run cross correlation - TOM
+
+shift_x, shift_y, peakcc = xcf()
+
+#%% Image correction - ALEX
+
+image_cor = im_correct(Images, shift_x, shift_y, ss_locations)
+
+#%% Re-run cross correlation with smaller subset size - TOM
+
+#%% calculate strain - ALEX

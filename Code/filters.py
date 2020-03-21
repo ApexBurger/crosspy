@@ -8,6 +8,13 @@
 # ab12215@ic.ac.uk
 import numpy as np
 
+
+# To do - split filters into individual functions
+
+# def h_window():
+
+# def fft_filter():
+
 def xfilters(roisize, fpassset):
     # Inputs:
     #   roisize = subset size - (128, 256 etc.)
