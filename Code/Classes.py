@@ -1,15 +1,14 @@
-# Classes used for the DPyC library package. 
-# Written by Alexander Bergsmo and associated legends at Imperial College London 2020
+# Bergsmo & McAuliffe 2020
 
 from PIL import Image
 import numpy as np
+from imprep_functions import *
+from XCF_functions import *
 
 class Imset:
 
-    # This instantiates a DIC image class which performs all necessary
-    # operations on the dic image and gives it parameters
-    # This class will allow images to be read and converted to DICable images
-    # DIm classes have certain traits which will simplify DIC operations
+    # This instantiates a DIC image class, holding metadata. The image is not loaded until the method .imload() is called.
+    # Inputs are folder path and image file extension - will identify all images of that same extension within the folder.
 
     def __init__(self, folder_path,extension):
 
@@ -17,9 +16,11 @@ class Imset:
         self.extension = extension
         self.paths = sorted(self.folder.glob('*.'+extension))
         self.names=[path.name for i,path in enumerate(self.paths)]
+        self.n_ims=len(self.names)
 
     def imload(self,numbers):
-        # This loads the images provided by 'numbers'
+        # This loads the images identifed in the Imset enumerated by 'numbers'
+
         for i, n in enumerate(numbers):
 
             path=self.paths[n]
@@ -42,74 +43,71 @@ class Imset:
         
         return imarray_stack
 
+class dic:
+# A class that holds information relating to a DIC run on an imageset
+# Call .run(filter_settings...) to map x, y displacements
+# At the moment it runs on the top left portion of the image (ie. if there are pixels to the right and down that...
+# can't be accommodated by square subsets of given roi_size, they will be ignored).
 
-    def conv_greyscale(self):
-        # This converts a loaded image to greyscale
-        imarray =
-        imarray_conv = 
+    def __init__(self,imageset,roi,filter_settings):
+        self.ims=imageset.imload(range(0,imageset.n_ims))
+        self.n_ims=imageset.n_ims
+        self.n_rows,self.n_cols,self.ss_locations,self.ss_spacing=gen_ROIs(self.ims.shape[0:2],roi)
+        self.n_subsets=self.ss_locations.shape[0]
+        self.roi=roi
+        self.filter_settings=filter_settings
 
-        return imarray_conv
+    def run(self,imnos=[0,1]):
+            
+        phs=np.zeros(self.n_subsets)
+        dxs=np.zeros(self.n_subsets)
+        dys=np.zeros(self.n_subsets)
 
-    # Filter settings are currently only definable here as default keyword
-    # TO DO - GUI to help user chose the filter
+        for subset_n in range(0,self.n_subsets):
+            #grab the reference and test subsets, and get subpixel registration
+            ref=get_subset(self.ims,self.roi,self.ss_locations,subset_n,imnos[0])
+            test=get_subset(self.ims,self.roi,self.ss_locations,subset_n,imnos[1])
+            dxs[subset_n],dys[subset_n],phs[subset_n]=fxcorr(ref,test,self.roi,self.filter_settings)
 
-    def gen_filters(self, size_pass, filter_settings=[4,2,16,32]):
-        # Inputs:
-        #   size_pass = subset size - (128, 256 etc.)
-        #   fpasset = [high pass cut off, high pass width, low pass cut off, low pass width]
-        # outputs:
-        #   fftfilter = non idea (gaussian) band pass filter
-        #   hfilter = hanning filter
+            #translate best_dxs etc back onto image grid
+            dx_map=np.reshape(dxs,(self.n_rows,self.n_cols),'F')
+            dy_map=np.reshape(dys,(self.n_rows,self.n_cols),'F')
+            ph_map=np.reshape(phs,(self.n_rows,self.n_cols),'F')
 
-        pi = np.pi
-        cos = np.cos
-        dot = np.dot
-        sqrt = np.sqrt
-        exp = np.exp
+        # self.ph_map=ph_map
+        # self.dx_map=dx_map
+        # self.dy_map=dy_map
 
-        lcutoff = filter_settings[2]
-        lwidth = filter_settings[3]/2
-        hcutoff = filter_settings[0]
-        hwidth = filter_settings[1]/2
+        return dx_map,dy_map,ph_map
 
-        if lcutoff < hcutoff:
-            print('low pass filter smaller than high pass filter')
-            return
+    def run_sequential(self):
+        #Perform DIC on consecutive images, using the previous as a reference.
 
-        # generate square grid
-        u = range(0, size_pass)
+        ph_maps=np.zeros((self.n_rows,self.n_cols,self.n_ims-1))
+        dx_maps=np.zeros((self.n_rows,self.n_cols,self.n_ims-1))
+        dy_maps=np.zeros((self.n_rows,self.n_cols,self.n_ims-1))
 
-        # meshgrid function
-        meshv, meshu = np.meshgrid(u,u)
-        meshvf = meshv-size_pass/2-0.5
-        meshuf = meshu-size_pass/2-0.5
+        for i in range(0,self.n_ims-1):
+            dx_maps[:,:,i],dy_maps[:,:,i],ph_maps[:,:,i]=self.run([i,i+1])
 
-        # create Hann window
-        hfilter = (cos(((pi*(meshuf)/size_pass)))*(cos((pi*meshvf/size_pass))))
+        return dx_maps, dy_maps, ph_maps
 
-        # create fft filter
-        distf = sqrt((meshvf*meshvf)+(meshuf*meshuf))
+    def run_cumulative(self):
+        #Perform DIC on sequential images, using the first as a reference.
 
-        # lowpass
-        lfftfilter = exp(-((distf-lcutoff)/sqrt(2)*lwidth/2)**2)
-        lfftfilter[distf > (lcutoff+2*lwidth)] = 0
-        lfftfilter[distf < (lcutoff+2*lwidth)] = 1
+        ph_maps=np.zeros((self.n_rows,self.n_cols,self.n_ims-1))
+        dx_maps=np.zeros((self.n_rows,self.n_cols,self.n_ims-1))
+        dy_maps=np.zeros((self.n_rows,self.n_cols,self.n_ims-1))
 
-
-        # highpass
-        hfftfilter = exp(-((hcutoff-distf)/sqrt(2)*hwidth/2))**2
-        hfftfilter[distf < (hcutoff-2*hwidth)] = 0
-        hfftfilter[distf > hcutoff] = 1
-
-        # combine
-        fftfilter = hfftfilter*lfftfilter
-        fftfilter = np.fft.fftshift(fftfilter)
+        for i in range(0,self.n_ims-1):
+            dx_maps[:,:,i],dy_maps[:,:,i],ph_maps[:,:,i]=self.run([i,i+1])
         
-        return fftfilter, hfilter
+        return dx_maps, dy_maps, ph_maps
 
-    def cross_correlate(self, fftfilter, hfilter):
-        # Cross correlate below
-        pass
+
+
+
+
 
 
     def strain_calc()

@@ -1,42 +1,32 @@
-# folder = 'asdf'
-# Imset1 = Imset(folder)
-
-# Imset.prepare(gray=True)
-
-
-
-# displacements1,rotation1=get_displacements(Imset,start_im=0,end_im=1,FFT1=1234,FFT2=1234,ss=1234) #array
-
-# strain1=get_strain(displacement1,rotation1,strain_method=0) #array
-# plot_strains(strain_1)
-
-#Settings:
-
-roi = dict(
-    size_pass = 200,
-    overlap_pass = 70/100
-
-)
-
 #%%
 %load_ext autoreload
 %autoreload 2
 
-roi = dict(size_pass = 200,overlap_pass = 70/100)
+roi = dict(size_pass = 200, overlap_pass = 0.7, xcf_mesh=500)
+filter_settings=[4,2,15,8] #fft filter settings: high pass, high pass width, low pass, low pass width
 
 import os as o
 o.chdir('/Users/tom/Documents/GitHub/crosspy/Code')
 from Classes import *
-from DataPrep_Functions import *
+from imprep_functions import *
+from XCF_functions import *
 from pathlib import Path
+import matplotlib.pyplot as plt 
 
 folder_path = Path(r"/Users/tom/Documents/GitHub/crosspy/data")
 Images = Imset(folder_path,'tif')
 
-#examples: these dont need to be in deck
-ims = Images.imload([0,1])
-fftfil, hfil = gen_filters(roi['size_pass'])
-ss_locations=gen_ROIs(ims.shape[0:2],256,0.5)
+# %% Instantiate and run the DIC
+
+#build the dic class (but don't run it yet):
+dic_1stpass=dic(Images,roi,filter_settings)
+
+#run the dic on specified images within the stack, and get displacements:
+dx_map, dy_map, ph_map = dic_1stpass.run(imnos=[0,1]) 
+
+#can also do:
+#dx_maps, dy_maps, ph_maps = dic_1stpass.run_sequential() #figures out imnos as consecutive images
+#dx_maps, dy_maps, ph_maps = dic_1stpass.run_cumulative() #figures out imnos as 0 and sequential
 
 #%% Generate filters
 
