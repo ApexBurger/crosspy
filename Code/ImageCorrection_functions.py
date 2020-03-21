@@ -12,12 +12,11 @@ def im_correct(Images, shift_x, shift_y, pos_x, pos_y):
     image_c = np.zeros(np.size(image_ref,0),np.size(image_ref,1),len(Images))
     image_c[:,:,1] = Image_ref
 
-
     for i in len(Images)-1:
 
         im = Images.imload()
         x_shifts = shift_x[:, :, i]
-        y_shifts= shift_y[:, :, i]
+        y_shifts = shift_y[:, :, i]
 
         # Correct rigid translation in x and y
 

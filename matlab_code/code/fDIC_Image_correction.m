@@ -8,7 +8,7 @@ Image_re = zeros(size(Image_1,1),size(Image_1,2),numel(Image_list)-1);
 Image_re(:,:,1) = Image_1; 
 for I=1:numel(Image_list)-1
     
-    Image = im2double(imread([Image_folder,Image_list{I+1}]));
+    Image = im2double(imread([Image_folder,Image_list{I+1}])); 
     X_Shifts=Shift_X(:,:,I);
     Y_Shifts=Shift_Y(:,:,I);
     % Correct the rigid translation in x and y axes

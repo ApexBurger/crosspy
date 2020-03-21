@@ -17,6 +17,6 @@ shifts = [x_pos(:)-xc-new_points(:,1),y_pos(:)-yc-new_points(:,2)];
 
 %find the residuals
 resids=abs([shifts(:,1)-x_shift;shifts(:,2)-y_shift]);
-
+ 
 end
 
