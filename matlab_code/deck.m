@@ -15,14 +15,14 @@ addpath code
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%User input%%%%%%%%%%%%%%%%%%
-Image_folder    ='/Users/tom/Desktop/data/'; % '2' is using the consetutive image as the refernce image
+Image_folder    ='D:\DIC\crosspy\data\Siyang\'; % '2' is using the consetutive image as the refernce image
 DIC_method      = 2; % '1' is used as the first image as the reference image (suitable for small deformation)
 % '2' is used as the previous image as the reference image (prefered for large deformation)
 Image_Interval  = 1; %define the interval between the reference and test pattern for Method 2
 ROI.size_pass_1    = 200; % pass  to fix rigid body rotation
 ROI.overlap_pass_1 = 70; % in percent
-ROI.size_pass_2    = 60; % pass which determines final strain resolution
-ROI.overlap_pass_2 = 90; % in percent
+ROI.size_pass_2    = 55; % pass which determines final strain resolution
+ROI.overlap_pass_2 = 85; % in percent
 ROI.overlap_pass_1 = ROI.overlap_pass_1/100;
 ROI.overlap_pass_2 = ROI.overlap_pass_2/100;
 XCF_mesh        = 250; % XCF mesh size default value  is 250

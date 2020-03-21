@@ -10,7 +10,7 @@ c_lim_auto = 0;
 addpath('Colormaps')
 %% get the files
 % upload the .mat file 
-raw_data_dir = 'D:\Alex\DIC_results\CE4511-2\Subset_test\';
+raw_data_dir = 'D:\DIC\crosspy\data\';
 [sample_file,sample_path] = uigetfile([raw_data_dir '\*.mat'],'Where the raw DIC results are');
 
 %% 
@@ -50,8 +50,8 @@ end
 
 figure
 % plot
-imagesc(Res_data.Data.Strain{1}(:,:,comp_1,comp_2))
-%imagesc(Res_data.Data.Strain_ef)
+%imagesc(Res_data.Data.Strain{1}(:,:,comp_1,comp_2))
+imagesc(Res_data.Data.Strain_ef)
 % settings
 caxis([c_min c_max])
 fig_name = ['e_' num2str(comp_1) '_,_' num2str(comp_2)];
@@ -60,7 +60,7 @@ fig_name = erase(fig_name,'_');
 fig_name = erase(fig_name,',');
 axis off
 axis image
-colormap hot
+colormap jet
 colorbar
 disp(['Plotting ' fig_name])
 

@@ -28,6 +28,18 @@ dx_map, dy_map, ph_map = dic_1stpass.run(imnos=[0,1])
 #dx_maps, dy_maps, ph_maps = dic_1stpass.run_sequential() #figures out imnos as consecutive images
 #dx_maps, dy_maps, ph_maps = dic_1stpass.run_cumulative() #figures out imnos as 0 and sequential
 
-#%% Generate filters
+#%% Generate filters - ALEX
 
-fftfil, hfil = Imset.gen_filters(roi[size_pass])
+fftfil, hfil = Imset.gen_filters(roi['size_pass'])
+
+#%% Run cross correlation - TOM
+
+shift_x, shift_y, peakcc = xcf()
+
+#%% Image correction - ALEX
+
+image_cor = im_correct(Images, shift_x, shift_y, ss_locations)
+
+#%% Re-run cross correlation with smaller subset size - TOM
+
+#%% calculate strain - ALEX

@@ -113,3 +113,10 @@ class dic:
     def strain_calc()
         # strain calc based on deformation map
         pass
+
+
+
+class Im(Imset):
+
+    def __init__(self):
+        pass
