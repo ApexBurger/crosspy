@@ -1,18 +1,18 @@
 # Bergsmo & McAuliffe 2020
 
 import numpy as np
+from numba import jit
 
 def gen_ROIs(imshape,roi):
     #generate where the subsets are for an arbitrary image size
-    
-    size_pass=roi['size_pass']
-    overlap=roi['overlap_pass']
+
+    size_pass=roi[0]
+    overlap=roi[1]/100
 
     rows=imshape[0]
     cols=imshape[1]
 
     spacing = round(size_pass*(1-overlap))
-    #add this to the roi dictionary
     
     #size_pass = subset size = 128,256 etc, overlap = proportion, eg 0.5, image1 and image2 must be same shape
     col_remainder=cols%spacing
@@ -39,17 +39,16 @@ def gen_ROIs(imshape,roi):
     
     return n_row_sets, n_col_sets, ss_locations, spacing
 
-
-def get_subset(ims,roi,ss_locations,n,imno,norm=True):
+def get_subset(ims,size_pass,ss_locations,n,imno):
     #grab a subset from a stacked numpy array of images already loaded in RAM (imno is number in stack, n is subset number in ss_locations)
     
-    subset=ims[ss_locations[n,0]:(ss_locations[n,0]+roi['size_pass']),ss_locations[n,1]:(ss_locations[n,1]+roi['size_pass']),imno]
-    
-    if norm==True:
-        #normalise
-        subset_norm=(subset-np.mean(subset))/np.std(subset)
-    else:
-        subset_norm=subset 
+    subset=ims[ss_locations[n,0]:(ss_locations[n,0]+int(size_pass)),ss_locations[n,1]:(ss_locations[n,1]+int(size_pass)),imno]
+
+    # if norm==True:
+    #     #normalise
+    subset_norm=(subset-np.ones_like(subset)*np.mean(subset))/np.std(subset)
+    # else:
+    #     subset_norm=np.array(subset) 
 
     return subset_norm
 
