@@ -49,7 +49,7 @@ class Imset:
         
         return imarray_stack
 
-class dic:
+class DIC:
 # A class that holds information relating to a DIC run on an imageset
 # Call .run(filter_settings...) to map x, y displacements
 # At the moment it runs on the top left portion of the image (ie. if there are pixels to the right and down that...
