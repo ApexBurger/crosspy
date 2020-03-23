@@ -5,8 +5,8 @@
 #%%
 
 import os as o
-#o.chdir('/Users/tom/Documents/GitHub/crosspy/Code')
-o.chdir('D:/DIC/crosspy/Code')
+o.chdir('/Users/tom/Documents/GitHub/crosspy/Code')
+#o.chdir('D:/DIC/crosspy/Code')
 from Classes import *
 from imprep_functions import *
 from XCF_functions import *
@@ -15,7 +15,7 @@ import time
 
 t0=time.time()
 
-folder_path = Path(r"D:/DIC/crosspy/data/Tom")
+folder_path = Path(r"/Users/tom/Documents/GitHub/crosspy/Data/Siyang")
 Images = Imset(folder_path,'tif')
 
 fig = plt.figure()
