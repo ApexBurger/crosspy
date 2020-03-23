@@ -21,6 +21,10 @@ class Imset:
 
         print('Found '+str(self.n_ims)+' images')
 
+    def __len__(self):
+        return self.n_ims
+        # this is redundant but nice to define
+
     def imload(self,numbers):
         # This loads the images identifed in the Imset enumerated by 'numbers'
 
@@ -63,6 +67,8 @@ class DIC:
         self.n_subsets=self.ss_locations.shape[0]
         self.roi=roi
         self.filter_settings=filter_settings
+        self.x_pos = self.ss_locations[:,0].reshape(self.n_rows,self.n_cols)+roi['size_pass']/2
+        self.y_pos = self.ss_locations[:,1].reshape(self.n_rows,self.n_cols)+roi['size_pass']/2
 
     def run(self,imnos=[0,1]):
             
@@ -128,6 +134,7 @@ class DIC:
             ax12.set_title('Y-displacements, map '+str(i+1))
             ax13.imshow(self.ph_maps[:,:,i],cmap=colmap)
             ax13.set_title('CC peak heights, map '+str(i+1))
+
 
     def strain_calc(self):
         # strain calc based on deformation map

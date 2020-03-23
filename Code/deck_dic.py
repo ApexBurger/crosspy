@@ -15,6 +15,9 @@ from ImageCorrection_functions import *
 folder_path = Path(r"D:/DIC/crosspy/data/Tom")
 Images = Imset(folder_path,'tif')
 
+fig = plt.figure()
+plt.imshow(Images.imload([1]))
+
 # %% Instantiate and run the DIC
 
 #fft filter settings: high pass, high pass width, low pass, low pass width
@@ -22,7 +25,7 @@ filter_settings=[4,2,15,8]
 roi_1stpass = dict(size_pass = 200, overlap_pass = 0.7, xcf_mesh=500)
 
 #build the dic class (but don't run it yet):
-dic_1stpass=dic(Images,roi_1stpass,filter_settings)
+dic_1stpass=DIC(Images,roi_1stpass,filter_settings)
 
 #run the dic on specified images within the stack, and get displacements:
 dic_1stpass.run_sequential() #figures out imnos as consecutive images
@@ -34,7 +37,7 @@ dic_1stpass.run_sequential() #figures out imnos as consecutive images
 dic_1stpass.plot_results()
 
 #%% Image correction
-Images_cor=Images.correct(dx_map,dy_map)
+Images_cor =im_correct(Images, dic_1stpass.dx_maps, dic_1stpass.dy_maps, dic_1stpass.x_pos, dic_1stpass.y_pos)
 
 #%% Second pass
 roi_2ndpass = dict(size_pass = 200, overlap_pass = 0.7, xcf_mesh=500)
