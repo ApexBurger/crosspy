@@ -74,6 +74,9 @@ class DIC:
         self.fftfilter,self.hfilter=gen_filters(self.roi,filter_settings)
         self.filter_settings=filter_settings
 
+        self.x_pos = self.ss_locations[:,0].reshape(self.n_rows,self.n_cols)+roi['size_pass']/2
+        self.y_pos = self.ss_locations[:,1].reshape(self.n_rows,self.n_cols)+roi['size_pass']/2
+
     def run_sequential(self,par=False,chunks=10,cores=None):
         #Perform DIC on consecutive images, using the previous as a reference.
         #chunks and cores only apply if par=True ; if cores=None looks for maximum for your system.
