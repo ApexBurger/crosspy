@@ -1,5 +1,4 @@
 # Bergsmo & McAuliffe 2020
-
 import numpy as np
 from numba import jit
 

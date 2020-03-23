@@ -5,10 +5,6 @@ import matplotlib.pyplot as plt
 from multiprocessing import Pool
 import functools
 
-#%%
-
-#%%
-
 def subset_compare(d,imnos,subset_n):
     #grab the reference and test subsets, and get subpixel registration
     ref=get_subset(d.ims,d.roi[0],d.ss_locations,subset_n,imnos[0])
@@ -24,7 +20,7 @@ def subset_compare_par(d,imnos,chunks,cores):
         output = p.map(subset_compare_partial,range(0,len(d.ss_locations)),chunks)
     return output
 
-def run(d,imnos=[0,1],par=False,chunks=10,cores=None):
+def run_DIC(d,imnos=[0,1],par=False,chunks=10,cores=None):
     
     #preallocate for this DIC pair
     phs=np.zeros(d.n_subsets)

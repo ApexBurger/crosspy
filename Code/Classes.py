@@ -4,6 +4,7 @@ from PIL import Image
 import numpy as np
 from imprep_functions import *
 from XCF_functions import *
+from runDIC_functions import *
 import matplotlib.pyplot as plt
 from multiprocessing import Pool
 import functools
@@ -81,7 +82,7 @@ class dic:
         for i in range(0,self.n_ims-1):
             if par: suffix=' (parallel) '
             print('Running sequential DIC on image pair ' +str(i+1)+' of '+str(self.n_ims-1)+suffix)
-            dx_maps[:,:,i],dy_maps[:,:,i],ph_maps[:,:,i]=self.run([i,i+1],par,chunks,cores)
+            dx_maps[:,:,i],dy_maps[:,:,i],ph_maps[:,:,i]=run_DIC(self,[i,i+1],par,chunks,cores)
 
         self.ph_maps=ph_maps
         self.dx_maps=dx_maps
@@ -101,7 +102,7 @@ class dic:
         for i in range(0,self.n_ims-1):
             if par: suffix=' (parallel) '
             print('Running cumulative DIC on image pair ' +str(i+1)+' of '+str(self.n_ims-1)+suffix)
-            dx_maps[:,:,i],dy_maps[:,:,i],ph_maps[:,:,i]=self.run([0,i+1],par,chunks,cores)
+            dx_maps[:,:,i],dy_maps[:,:,i],ph_maps[:,:,i]=run_DIC(self,[0,i+1],par,chunks,cores)
 
         self.ph_maps=ph_maps
         self.dx_maps=dx_maps
@@ -109,7 +110,7 @@ class dic:
         
         #return dx_maps, dy_maps, ph_maps
 
-    def plot_results(self,colmap='RdBu'):
+    def plot_displacements(self,colmap='RdBu'):
 
         if self.ph_maps.any()==False:
             raise Exception('No DIC results to plot!')
