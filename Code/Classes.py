@@ -66,24 +66,6 @@ class DIC:
 
         self.ims=imageset.imload(range(0,imageset.n_ims))
         self.n_ims=imageset.n_ims
-        self.n_rows,self.n_cols,self.ss_locations,self.ss_spacing=gen_ROIs(self.ims.shape[0:2],roi)
-        self.n_subsets=self.ss_locations.shape[0]
-        self.roi=roi
-        self.filter_settings=filter_settings
-        self.x_pos = self.ss_locations[:,0].reshape(self.n_rows,self.n_cols)+roi['size_pass']/2
-        self.y_pos = self.ss_locations[:,1].reshape(self.n_rows,self.n_cols)+roi['size_pass']/2
-
-    def run(self,imnos=[0,1]):
-            
-        phs=np.zeros(self.n_subsets)
-        dxs=np.zeros(self.n_subsets)
-        dys=np.zeros(self.n_subsets)
-
-        for subset_n in range(0,self.n_subsets):
-            #grab the reference and test subsets, and get subpixel registration
-            ref=get_subset(self.ims,self.roi,self.ss_locations,subset_n,imnos[0])
-            test=get_subset(self.ims,self.roi,self.ss_locations,subset_n,imnos[1])
-            dxs[subset_n],dys[subset_n],phs[subset_n]=fxcorr(ref,test,self.roi,self.filter_settings)
         self.roi=list([roi['size_pass'],roi['overlap_percentage'],roi['xcf_mesh']])
 
         self.n_rows,self.n_cols,self.ss_locations,self.ss_spacing=gen_ROIs(self.ims.shape[0:2],self.roi)
@@ -152,7 +134,6 @@ class DIC:
             ax13.set_title('CC peak heights, map '+str(i+1))
             
             plt.show()
-
 
     def strain_calc(self):
         # strain calc based on deformation map
