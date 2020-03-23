@@ -6,16 +6,17 @@
 if __name__=='__main__':
     import os as o
     # o.chdir('/Users/tom/Documents/GitHub/crosspy/Code')
-    o.chdir(r'C:\Users\tpm416\Documents\GitHub\crosspy\Code')
+    o.chdir(r'/Users/tom/Documents/GitHub/crosspy/Code')
     from Classes import *
     from imprep_functions import *
     from XCF_functions import *
     from pathlib import Path
     import time
+    from ImageCorrection_functions import *
 
     t0=time.time()
 
-    folder_path = Path(r"C:\Users\tpm416\Documents\GitHub\crosspy\data\Siyang")
+    folder_path = Path(r"/Users/tom/Documents/GitHub/crosspy/data/Siyang")
     Images = Imset(folder_path,'tif')
 
     fig = plt.figure()
@@ -30,11 +31,13 @@ if __name__=='__main__':
     #build the dic class (but don't run it yet):
     dic_1stpass=DIC(Images,roi_1stpass,filter_settings)
     #run the dic on specified images within the stack, and get displacements:
-    dic_1stpass.run_sequential(par=True,cores=5,chunk_length=40)
-    dic_1stpass.plot_displacements()
+    dic_1stpass.run_sequential(par=True,chunk_length=250)
+    #dic_1stpass.plot_displacements()
 
-    print(time.time()-t0)
+    #corrcect the images
+    Images_cor =im_correct(Images, dic_1stpass.dx_maps, dic_1stpass.dy_maps, dic_1stpass.x_pos, dic_1stpass.y_pos)
+
+    
 
 
-    #%%
-    # Images_cor =im_correct(Images, dic_1stpass.dx_maps, dic_1stpass.dy_maps, dic_1stpass.x_pos, dic_1stpass.y_pos)
+# %%
