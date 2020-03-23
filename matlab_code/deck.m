@@ -21,11 +21,11 @@ DIC_method      = 2; % '1' is used as the first image as the reference image (su
 Image_Interval  = 1; %define the interval between the reference and test pattern for Method 2
 ROI.size_pass_1    = 200; % pass  to fix rigid body rotation
 ROI.overlap_pass_1 = 70; % in percent
-ROI.size_pass_2    = 55; % pass which determines final strain resolution
-ROI.overlap_pass_2 = 85; % in percent
+ROI.size_pass_2    = 60; % pass which determines final strain resolution
+ROI.overlap_pass_2 = 80; % in percent
 ROI.overlap_pass_1 = ROI.overlap_pass_1/100;
 ROI.overlap_pass_2 = ROI.overlap_pass_2/100;
-XCF_mesh        = 250; % XCF mesh size default value  is 250
+XCF_mesh        = 500; % XCF mesh size default value  is 250
 strain_method   = 4;%1---9nodes FEA; 2---8 nodes FEA; 3---4nodes FAE; 4---least squre poly fitting quaratic in the bulk and linear at the edges and corners
 % method 4 is recommanded as it used all ROIs and applied but first and
 % second orders of polynomial at the edges and bulk of image

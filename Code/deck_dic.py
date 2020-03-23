@@ -5,7 +5,8 @@
 #%%
 
 import os as o
-o.chdir('/Users/tom/Documents/GitHub/crosspy/Code')
+#o.chdir('/Users/tom/Documents/GitHub/crosspy/Code')
+o.chdir('D:/DIC/crosspy/Code')
 from Classes import *
 from imprep_functions import *
 from XCF_functions import *
@@ -14,8 +15,11 @@ import time
 
 t0=time.time()
 
-folder_path = Path(r"/Users/tom/Documents/GitHub/crosspy/data/Siyang")
+folder_path = Path(r"D:/DIC/crosspy/data/Tom")
 Images = Imset(folder_path,'tif')
+
+fig = plt.figure()
+plt.imshow(Images.imload([1]))
 
 # %% Instantiate and run the DIC
 
@@ -30,3 +34,7 @@ dic_1stpass.run_sequential(par=True)
 dic_1stpass.plot_displacements()
 
 print(time.time()-t0)
+
+
+#%%
+Images_cor =im_correct(Images, dic_1stpass.dx_maps, dic_1stpass.dy_maps, dic_1stpass.x_pos, dic_1stpass.y_pos)

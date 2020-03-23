@@ -24,6 +24,10 @@ class Imset:
 
         print('Found '+str(self.n_ims)+' images')
 
+    def __len__(self):
+        return self.n_ims
+        # this is redundant but nice to define
+
     def imload(self,numbers):
         # This loads the images identifed in the Imset enumerated by 'numbers'
 

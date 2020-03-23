@@ -12,8 +12,8 @@ for I=1:numel(Image_list)-1
     X_Shifts=Shift_X(:,:,I);
     Y_Shifts=Shift_Y(:,:,I);
     % Correct the rigid translation in x and y axes
-    X_Shifts_new = X_Shifts(:)-mean(X_Shifts(:));
-    Y_Shifts_new = Y_Shifts(:)-mean(Y_Shifts(:));
+    X_Shifts_new = X_Shifts(:)-mean(X_Shifts(:)); % column of x shifts
+    Y_Shifts_new = Y_Shifts(:)-mean(Y_Shifts(:)); % column of y shifts
     % first guess of the rotation origin and rotation angle
     params0=[size(Image,2)/8,size(Image,1)/1,-2];
     %define the bounds and starting guess for our rotation correction
@@ -43,7 +43,15 @@ for I=1:numel(Image_list)-1
     Image_rotation  = [(Image_shifts(:,1)-Centre_X),(Image_shifts(:,2)-Centre_Y)]*Rotation;
     Image_correct = [Image_rotation(:,1)+Centre_X, Image_rotation(:,2)+Centre_Y];
     
-    F=scatteredInterpolant(Image_correct(:,1), Image_correct(:,2),Image(:),'natural');
+    % Generate an interpolant object based upon sample points in
+    % Image_correct
+    
+    F=scatteredInterpolant(Image_correct(:,1), Image_correct(:,2),Image(:),'natural'); 
+    
+    % F is an object which contains the interpolant F - this can be
+    % queried at points (xq, yq) to produce interpolated values
+    
+    % Feed the grid values into the interpolant to return a corrected image
     
     Image_re(:,:,I+1) =F(pix_xgrid,pix_ygrid);
     
