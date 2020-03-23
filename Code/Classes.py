@@ -77,7 +77,7 @@ class DIC:
         self.x_pos = self.ss_locations[:,0].reshape(self.n_rows,self.n_cols)+roi['size_pass']/2
         self.y_pos = self.ss_locations[:,1].reshape(self.n_rows,self.n_cols)+roi['size_pass']/2
 
-    def run_sequential(self,par=False,chunks=10,cores=None):
+    def run_sequential(self,par=False,cores=None,chunk_length=50):
         #Perform DIC on consecutive images, using the previous as a reference.
         #chunks and cores only apply if par=True ; if cores=None looks for maximum for your system.
 
@@ -91,7 +91,7 @@ class DIC:
         for i in range(0,self.n_ims-1):
             if par: suffix=' (parallel) '
             print('Running sequential DIC on image pair ' +str(i+1)+' of '+str(self.n_ims-1)+suffix)
-            dx_maps[:,:,i],dy_maps[:,:,i],ph_maps[:,:,i]=run_DIC(self,[i,i+1],par,chunks,cores)
+            dx_maps[:,:,i],dy_maps[:,:,i],ph_maps[:,:,i]=run_DIC(self,[i,i+1],par,cores,chunk_length=50)
 
         self.ph_maps=ph_maps
         self.dx_maps=dx_maps
@@ -99,7 +99,7 @@ class DIC:
 
         #return dx_maps, dy_maps, ph_maps
 
-    def run_cumulative(self,par=False,chunks=10,cores=None):
+    def run_cumulative(self,par=False,cores=None,chunk_length=50):
         #Perform DIC on sequential images, using the first as a reference.
         #chunks and cores only apply if par=True ; if cores=None looks for maximum for your system.
 
@@ -114,7 +114,7 @@ class DIC:
             if par: suffix=' (parallel) '
 
             print('Running cumulative DIC on image pair ' +str(i+1)+' of '+str(self.n_ims-1)+suffix)
-            dx_maps[:,:,i],dy_maps[:,:,i],ph_maps[:,:,i]=run_DIC(self,[0,i+1],par,chunks,cores)
+            dx_maps[:,:,i],dy_maps[:,:,i],ph_maps[:,:,i]=run_DIC(self,[0,i+1],par,cores,chunk_length)
 
         self.ph_maps=ph_maps
         self.dx_maps=dx_maps
