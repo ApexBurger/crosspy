@@ -2,7 +2,6 @@
 
 import numpy as np 
 import numpy.fft 
-from numba import jit
 
 def gen_filters(roi, filter_settings=[4,2,16,32]):
     #genearte FFT filters

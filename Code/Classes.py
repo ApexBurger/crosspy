@@ -79,6 +79,8 @@ class dic:
         dx_maps=np.zeros((self.n_rows,self.n_cols,self.n_ims-1))
         dy_maps=np.zeros((self.n_rows,self.n_cols,self.n_ims-1))
 
+        suffix=''
+
         for i in range(0,self.n_ims-1):
             if par: suffix=' (parallel) '
             print('Running sequential DIC on image pair ' +str(i+1)+' of '+str(self.n_ims-1)+suffix)
@@ -99,8 +101,11 @@ class dic:
         dx_maps=np.zeros((self.n_rows,self.n_cols,self.n_ims-1))
         dy_maps=np.zeros((self.n_rows,self.n_cols,self.n_ims-1))
 
+        suffix=''
+
         for i in range(0,self.n_ims-1):
             if par: suffix=' (parallel) '
+
             print('Running cumulative DIC on image pair ' +str(i+1)+' of '+str(self.n_ims-1)+suffix)
             dx_maps[:,:,i],dy_maps[:,:,i],ph_maps[:,:,i]=run_DIC(self,[0,i+1],par,chunks,cores)
 
