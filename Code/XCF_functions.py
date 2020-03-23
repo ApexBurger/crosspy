@@ -1,6 +1,7 @@
 # Following Britton et al ; Bergsmo & McAuliffe 2020
 
 import numpy as np 
+import numpy.fft 
 
 def gen_filters(roi, filter_settings=[4,2,16,32]):
     #genearte FFT filters
@@ -12,7 +13,7 @@ def gen_filters(roi, filter_settings=[4,2,16,32]):
     #   fftfilter = non idea (gaussian) band pass filter
     #   hfilter = hanning filter
 
-    size_pass=roi['size_pass']
+    size_pass=roi[0]
 
     pi = np.pi
     cos = np.cos
@@ -34,6 +35,7 @@ def gen_filters(roi, filter_settings=[4,2,16,32]):
 
     # meshgrid function
     meshv, meshu = np.meshgrid(u,u)
+
     meshvf = meshv-size_pass/2+0.5
     meshuf = meshu-size_pass/2+0.5
 
@@ -138,10 +140,14 @@ def freg(ROI_test,ROI_ref,XCF_roisize,XCF_mesh,data_fill):
 
     return col_shift, row_shift, CCmax
 
-def fxcorr(subset1,subset2,roi,filters_settings):
+def fxcorr(subset1,subset2,d):
+
+    roi=d.roi    
+    fftfil=d.fftfilter
+    hfil=d.hfilter
+    filters_settings=d.filter_settings
 
     #h-filter the subsets and generate the fft filter
-    fftfil, hfil = gen_filters(roi)
     subset1_filt=hfil*subset1
     subset2_filt=hfil*subset2
 
@@ -150,8 +156,8 @@ def fxcorr(subset1,subset2,roi,filters_settings):
     f_s2=np.fft.fft2(subset2_filt)
 
     fill1=(filters_settings[2]+filters_settings[3])
-    fill2=(roi['size_pass']-(filters_settings[2]+filters_settings[3]-1))
-    fill3=roi['size_pass']
+    fill2=(roi[0]-(filters_settings[2]+filters_settings[3]-1))
+    fill3=roi[0]
     data_fill=np.array([i for i in range(fill1)]+[i for i in range(fill2-1,fill3)])
 
     #grab the reduced filter
@@ -169,5 +175,5 @@ def fxcorr(subset1,subset2,roi,filters_settings):
     ROI_ref=f_s1_red*fftfil_red
     ROI_test=f_s2_red*fftfil_red
 
-    col_shift, row_shift, CCmax = freg(ROI_test,ROI_ref,roi['size_pass'],roi['xcf_mesh'],data_fill)
+    col_shift, row_shift, CCmax = freg(ROI_test,ROI_ref,roi[0],roi[2],data_fill)
     return col_shift, row_shift, CCmax
