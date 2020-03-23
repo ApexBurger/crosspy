@@ -19,7 +19,7 @@ Images = Imset(folder_path,'tif')
 
 #fft filter settings: high pass, high pass width, low pass, low pass width
 filter_settings=[4,2,15,8]
-roi_1stpass = dict(size_pass = 200, overlap_percentage = 85, xcf_mesh=500)
+roi_1stpass = dict(size_pass = 100, overlap_percentage = 70, xcf_mesh=300)
 
 #build the dic class (but don't run it yet):
 dic_1stpass=dic(Images,roi_1stpass,filter_settings)

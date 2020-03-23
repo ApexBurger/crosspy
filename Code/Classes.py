@@ -48,21 +48,6 @@ class Imset:
         
         return imarray_stack
 
-def subset_compare(d,imnos,subset_n):
-    #grab the reference and test subsets, and get subpixel registration
-    ref=get_subset(d.ims,d.roi[0],d.ss_locations,subset_n,imnos[0])
-    test=get_subset(d.ims,d.roi[0],d.ss_locations,subset_n,imnos[1])
-    #get the displacements
-    dxs,dys,phs=fxcorr(ref,test,d)
-    return dxs,dys,phs
-
-def subset_compare_par(d,imnos,chunks,cores):
-    subset_compare_partial=functools.partial(subset_compare,d,imnos)
-
-    with Pool(cores) as p:
-        output = p.map(subset_compare_partial,range(0,len(d.ss_locations)),chunks)
-    return output
-
 class dic:
 # A class that holds information relating to a DIC run on an imageset
 # Call .run(filter_settings...) to map x, y displacements
@@ -83,35 +68,6 @@ class dic:
 
         self.fftfilter,self.hfilter=gen_filters(self.roi,filter_settings)
         self.filter_settings=filter_settings
-
-    def run(self,imnos=[0,1],par=False,chunks=10,cores=None):
-        
-        #preallocate for this DIC pair
-        phs=np.zeros(self.n_subsets)
-        dxs=np.zeros(self.n_subsets)
-        dys=np.zeros(self.n_subsets)
-
-        #serial version of this function
-        if par==False:
-
-            for subset_n in range(0,self.n_subsets):
-                dxs[subset_n],dys[subset_n],phs[subset_n]=subset_compare(self,imnos,subset_n)
-
-        #parallel version
-        if par==True:
-            output = subset_compare_par(self,imnos,chunks,cores)
-
-            for subset_n in range(0,len(output)):
-                dxs[subset_n]=output[subset_n][0]
-                dys[subset_n]=output[subset_n][1]
-                phs[subset_n]=output[subset_n][2]
-
-        #translate best_dxs etc back onto image grid
-        dx_map=np.reshape(dxs,(self.n_rows,self.n_cols),'F')
-        dy_map=np.reshape(dys,(self.n_rows,self.n_cols),'F')
-        ph_map=np.reshape(phs,(self.n_rows,self.n_cols),'F')
-
-        return dx_map,dy_map,ph_map
 
     def run_sequential(self,par=False,chunks=10,cores=None):
         #Perform DIC on consecutive images, using the previous as a reference.
@@ -167,7 +123,7 @@ class dic:
             ax13.imshow(self.ph_maps[:,:,i],cmap=colmap)
             ax13.set_title('CC peak heights, map '+str(i+1))
             
-        plt.show()
+            plt.show()
 
     def strain_calc(self):
         # strain calc based on deformation map
