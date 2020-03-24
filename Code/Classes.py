@@ -135,9 +135,33 @@ class DIC:
             
             plt.show()
 
-    def strain_calc(self):
-        # strain calc based on deformation map
-        pass
+    def strain_sequential(self,par=False,chunks=10,cores=None):
+        #Perform strain calculation on consecutive images, using the previous as a reference.
+
+        #preallocate for all DIC pairs
+        strain_11 = np.zeros((self.n_rows,self.n_cols,self.n_ims-1))
+        strain_22 = np.zeros((self.n_rows,self.n_cols,self.n_ims-1))
+        strain_12 = np.zeros((self.n_rows,self.n_cols,self.n_ims-1))
+        rotation = 
+        strain_eff = np.zeros((self.n_rows,self.n_cols,self.n_ims-1))
+
+        suffix=''
+
+        for i in range(0,self.n_ims-1):
+            if par: suffix=' (parallel) '
+            print('Running sequential DIC on image pair ' +str(i+1)+' of '+str(self.n_ims-1)+suffix)
+            strain_11[:,:,i],strain_22[:,:,i],strain_12[:,:,i], strain_eff[:,:,i]=run_DIC(self)
+
+        self.ph_maps=ph_maps
+        self.dx_maps=dx_maps
+        self.dy_maps=dy_maps
+
+        #return dx_maps, dy_maps, ph_maps
+
+    def strain_cumulative(self):
+        #Perform strain calculation on sequential images, using the first as a reference.
+
+
 
 class Im(Imset):
 

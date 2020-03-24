@@ -30,7 +30,7 @@ roi_1stpass = dict(size_pass = 200, overlap_percentage = 70, xcf_mesh=250)
 #build the dic class (but don't run it yet):
 dic_1stpass=DIC(Images,roi_1stpass,filter_settings)
 #run the dic on specified images within the stack, and get displacements:
-dic_1stpass.run_sequential(par=True)
+dic_1stpass.run_sequential(par=True, cores=4)
 dic_1stpass.plot_displacements()
 
 print(time.time()-t0)
