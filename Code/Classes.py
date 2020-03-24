@@ -3,6 +3,7 @@
 from PIL import Image
 import numpy as np
 from imprep_functions import *
+from ImageCorrection_functions import *
 from XCF_functions import *
 from runDIC_functions import *
 import matplotlib.pyplot as plt
@@ -59,13 +60,21 @@ class DIC:
 # At the moment it runs on the top left portion of the image (ie. if there are pixels to the right and down that...
 # can't be accommodated by square subsets of given roi_size, they will be ignored).
 
-    def __init__(self,imageset,roi,filter_settings):
+    def __init__(self,images,roi,filter_settings):
 
-        if imageset.n_ims<1:
-            raise Exception('No images found!')
+        #if fed an Imset class
+        if isinstance(images,Imset):
+            if images.n_ims<1:
+                raise Exception('No images found!')
 
-        self.ims=imageset.imload(range(0,imageset.n_ims))
-        self.n_ims=imageset.n_ims
+            self.imageset=images
+            self.ims=images.imload(range(0,images.n_ims))
+            self.n_ims=images.n_ims
+
+        if isinstance(images,np.ndarray):
+            self.ims=images
+            self.n_ims=images.shape[2]
+
         self.roi=list([roi['size_pass'],roi['overlap_percentage'],roi['xcf_mesh']])
 
         self.n_rows,self.n_cols,self.ss_locations,self.ss_spacing=gen_ROIs(self.ims.shape[0:2],self.roi)
@@ -137,6 +146,10 @@ class DIC:
             ax13.set_title('CC peak heights, map '+str(i+1))
             
             plt.show()
+
+    def correct(self):
+        images_corrected=im_correct(self.imageset,self)
+        return images_corrected
 
     def strain_calc(self):
         # strain calc based on deformation map
