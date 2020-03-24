@@ -3,6 +3,7 @@
 from PIL import Image
 import numpy as np
 from imprep_functions import *
+from ImageCorrection_functions import *
 from XCF_functions import *
 from runDIC_functions import *
 import matplotlib.pyplot as plt
@@ -60,13 +61,21 @@ class DIC:
 # At the moment it runs on the top left portion of the image (ie. if there are pixels to the right and down that...
 # can't be accommodated by square subsets of given roi_size, they will be ignored).
 
-    def __init__(self,imageset,roi,filter_settings):
+    def __init__(self,images,roi,filter_settings):
 
-        if imageset.n_ims<1:
-            raise Exception('No images found!')
+        #if fed an Imset class
+        if isinstance(images,Imset):
+            if images.n_ims<1:
+                raise Exception('No images found!')
 
-        self.ims=imageset.imload(range(0,imageset.n_ims))
-        self.n_ims=imageset.n_ims
+            self.imageset=images
+            self.ims=images.imload(range(0,images.n_ims))
+            self.n_ims=images.n_ims
+
+        if isinstance(images,np.ndarray):
+            self.ims=images
+            self.n_ims=images.shape[2]
+
         self.roi=list([roi['size_pass'],roi['overlap_percentage'],roi['xcf_mesh']])
 
         self.n_rows,self.n_cols,self.ss_locations,self.ss_spacing=gen_ROIs(self.ims.shape[0:2],self.roi)
@@ -78,7 +87,7 @@ class DIC:
         self.x_pos = self.ss_locations[:,0].reshape(self.n_rows,self.n_cols)+roi['size_pass']/2
         self.y_pos = self.ss_locations[:,1].reshape(self.n_rows,self.n_cols)+roi['size_pass']/2
 
-    def run_sequential(self,par=False,chunks=10,cores=None):
+    def run_sequential(self,par=False,cores=None,chunk_length=50):
         #Perform DIC on consecutive images, using the previous as a reference.
         #chunks and cores only apply if par=True ; if cores=None looks for maximum for your system.
 
@@ -92,7 +101,7 @@ class DIC:
         for i in range(0,self.n_ims-1):
             if par: suffix=' (parallel) '
             print('Running sequential DIC on image pair ' +str(i+1)+' of '+str(self.n_ims-1)+suffix)
-            dx_maps[:,:,i],dy_maps[:,:,i],ph_maps[:,:,i]=run_DIC(self,[i,i+1],par,chunks,cores)
+            dx_maps[:,:,i],dy_maps[:,:,i],ph_maps[:,:,i]=run_DIC(self,[i,i+1],par,cores,chunk_length=50)
 
         self.ph_maps=ph_maps
         self.dx_maps=dx_maps
@@ -100,7 +109,7 @@ class DIC:
 
         #return dx_maps, dy_maps, ph_maps
 
-    def run_cumulative(self,par=False,chunks=10,cores=None):
+    def run_cumulative(self,par=False,cores=None,chunk_length=50):
         #Perform DIC on sequential images, using the first as a reference.
         #chunks and cores only apply if par=True ; if cores=None looks for maximum for your system.
 
@@ -115,7 +124,7 @@ class DIC:
             if par: suffix=' (parallel) '
 
             print('Running cumulative DIC on image pair ' +str(i+1)+' of '+str(self.n_ims-1)+suffix)
-            dx_maps[:,:,i],dy_maps[:,:,i],ph_maps[:,:,i]=run_DIC(self,[0,i+1],par,chunks,cores)
+            dx_maps[:,:,i],dy_maps[:,:,i],ph_maps[:,:,i]=run_DIC(self,[0,i+1],par,cores,chunk_length)
 
         self.ph_maps=ph_maps
         self.dx_maps=dx_maps
@@ -144,6 +153,7 @@ class DIC:
             raise Exception('No displacements available for strain calculation!')
         #Perform strain calculation on consecutive images, using the previous as a reference.
         self.mapnos = np.size(self.dx_maps, 2)
+
         # preallocate arrays - strain, rotation and deformation gradient
         # are stored in tensors for each subset for each map
         strain = np.zeros((self.n_rows, self.n_cols, 3, 3, self.mapnos))
@@ -164,10 +174,12 @@ class DIC:
         self.rotation = rotation
         self.deformation_gradient = F
 
-
     def strain_cumulative(self):
         #Perform strain calculation on sequential images, using the first as a reference.
         pass
+    def correct(self):
+        images_corrected=im_correct(self.imageset,self)
+        return images_corrected
     
     def plot_strains(self,colmap='RdBu'):
         
