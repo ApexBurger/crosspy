@@ -170,7 +170,7 @@ class DIC:
         self.strain_11 = strain[:,:,0,0,:]
         self.strain_22 = strain[:,:,1,1,:]
         self.strain_12 = strain[:,:,1,0,:]
-        self.strain_eff = strain_eff
+        self.strain_eff = strain_eff[:,:,0,:]
         self.rotation = rotation
         self.deformation_gradient = F
 
@@ -196,7 +196,6 @@ class DIC:
             ax21.set_title('Shear strains, map '+str(i+1))
             ax22.imshow(self.strain_eff[:,:,i],cmap=colmap)
             ax22.set_title('Effective strain, map '+str(i+1))
-            plt.show()
 
 class Im(Imset):
 

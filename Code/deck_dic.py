@@ -5,8 +5,8 @@
 #%%
 if __name__=='__main__':
     import os as o
-    # o.chdir('/Users/tom/Documents/GitHub/crosspy/Code')
-    o.chdir(r'C:\Users\tpm416\Documents\GitHub\crosspy\data\Siyang')
+    #o.chdir(r'C:\Users\tpm416\Documents\GitHub\crosspy\data\Siyang')
+    o.chdir(r'D:\DIC\crosspy\data\Siyang')
     from Classes import *
     from imprep_functions import *
     from XCF_functions import *
@@ -16,7 +16,7 @@ if __name__=='__main__':
 
     t0=time.time()
 
-    folder_path = Path(r"C:\Users\tpm416\Documents\GitHub\crosspy\data\Siyang")
+    folder_path = Path(r"D:\DIC\crosspy\data\Siyang")
     Images = Imset(folder_path,'tif')
 
     fig = plt.figure()
@@ -44,9 +44,18 @@ if __name__=='__main__':
     dic_2ndpass.run_sequential()
     dic_2ndpass.plot_displacements()
     # strain calc
-
-    dic_2ndpass.strain_sequential(strain_method='l2')
+    dic_2ndpass.strain_sequential()
     print(time.time()-t0)
+    
+
+
+# %%
+#%%
+
+
+
+#%%
+
 
 
 # %%
