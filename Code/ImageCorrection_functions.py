@@ -3,9 +3,15 @@ import numpy as np
 from scipy.optimize import least_squares
 from scipy import interpolate
 
-def im_correct(Images, shift_x, shift_y, pos_x, pos_y):
+def im_correct(Images,d):
+
     # Function to translate and rotate images to correct for 
     # rigid body rotation and translation
+
+    shift_x=d.dx_maps
+    shift_y=d.dy_maps
+    pos_x=d.x_pos
+    pos_y=d.y_pos
 
     # Load the first image and generate pixel arrays
     image_ref = Images.imload([0])
