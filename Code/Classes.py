@@ -8,6 +8,7 @@ from runDIC_functions import *
 import matplotlib.pyplot as plt
 from multiprocessing import Pool
 import functools
+from StrainCalc_functions import *
 
 class Imset:
 
@@ -74,6 +75,9 @@ class DIC:
         self.fftfilter,self.hfilter=gen_filters(self.roi,filter_settings)
         self.filter_settings=filter_settings
 
+        self.x_pos = self.ss_locations[:,0].reshape(self.n_rows,self.n_cols)+roi['size_pass']/2
+        self.y_pos = self.ss_locations[:,1].reshape(self.n_rows,self.n_cols)+roi['size_pass']/2
+
     def run_sequential(self,par=False,chunks=10,cores=None):
         #Perform DIC on consecutive images, using the previous as a reference.
         #chunks and cores only apply if par=True ; if cores=None looks for maximum for your system.
@@ -107,7 +111,7 @@ class DIC:
 
         suffix=''
 
-        for i in range(0,self.n_ims-1):
+        for i in range(0,self.n_ims):
             if par: suffix=' (parallel) '
 
             print('Running cumulative DIC on image pair ' +str(i+1)+' of '+str(self.n_ims-1)+suffix)
@@ -135,33 +139,52 @@ class DIC:
             
             plt.show()
 
-    def strain_sequential(self,par=False,chunks=10,cores=None):
+    def strain_sequential(self, strain_method='l2'):
+        if self.dx_maps.any()==False:
+            raise Exception('No displacements available for strain calculation!')
         #Perform strain calculation on consecutive images, using the previous as a reference.
-
-        #preallocate for all DIC pairs
-        strain_11 = np.zeros((self.n_rows,self.n_cols,self.n_ims-1))
-        strain_22 = np.zeros((self.n_rows,self.n_cols,self.n_ims-1))
-        strain_12 = np.zeros((self.n_rows,self.n_cols,self.n_ims-1))
-        rotation = 
-        strain_eff = np.zeros((self.n_rows,self.n_cols,self.n_ims-1))
-
+        self.mapnos = np.size(self.dx_maps, 2)
+        # preallocate arrays - strain, rotation and deformation gradient
+        # are stored in tensors for each subset for each map
+        strain = np.zeros((self.n_rows, self.n_cols, 3, 3, self.mapnos))
+        strain_eff = np.zeros((self.n_rows,self.n_cols, 1, self.mapnos))
+        rotation = np.zeros((self.n_rows, self.n_cols, 3, 3, self.mapnos))
+        F = np.zeros((self.n_rows, self.n_cols, 3, 3, self.mapnos))
         suffix=''
 
-        for i in range(0,self.n_ims-1):
-            if par: suffix=' (parallel) '
-            print('Running sequential DIC on image pair ' +str(i+1)+' of '+str(self.n_ims-1)+suffix)
-            strain_11[:,:,i],strain_22[:,:,i],strain_12[:,:,i], strain_eff[:,:,i]=run_DIC(self)
+        for i in range(0,self.mapnos):
+            print('Calculating sequential strain on map ' +str(i+1)+' of '+str(self.mapnos)+suffix)
+            strain[:,:,:,:,i], strain_eff[:,:,:,i], rotation[:,:,:,:,i], F = strain_calc(self,
+                mapnos=i, strain_method=strain_method)
 
-        self.ph_maps=ph_maps
-        self.dx_maps=dx_maps
-        self.dy_maps=dy_maps
+        self.strain_11 = strain[:,:,0,0,:]
+        self.strain_22 = strain[:,:,1,1,:]
+        self.strain_12 = strain[:,:,1,0,:]
+        self.strain_eff = strain_eff
+        self.rotation = rotation
+        self.deformation_gradient = F
 
-        #return dx_maps, dy_maps, ph_maps
 
     def strain_cumulative(self):
         #Perform strain calculation on sequential images, using the first as a reference.
+        pass
+    
+    def plot_strains(self,colmap='RdBu'):
+        
+        if self.strain_eff.any()==False:
+            raise Exception('No strain results to plot!')
 
-
+        for i in range(0,self.mapnos):
+            fig,((ax11,ax12),(ax21,ax22))=plt.subplots(2,2,figsize=(10,10)) 
+            ax11.imshow(self.strain_11[:,:,i],cmap=colmap)
+            ax11.set_title('XX strains, map '+str(i+1))
+            ax12.imshow(self.strain_22[:,:,i],cmap=colmap)
+            ax12.set_title('YY strains, map '+str(i+1))
+            ax21.imshow(self.strain_12[:,:,i],cmap=colmap)
+            ax21.set_title('Shear strains, map '+str(i+1))
+            ax22.imshow(self.strain_eff[:,:,i],cmap=colmap)
+            ax22.set_title('Effective strain, map '+str(i+1))
+            plt.show()
 
 class Im(Imset):
 

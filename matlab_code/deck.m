@@ -15,7 +15,7 @@ addpath code
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%User input%%%%%%%%%%%%%%%%%%
-Image_folder    ='D:\DIC\crosspy\data\Tom\'; % '2' is using the consetutive image as the refernce image
+Image_folder    ='D:\DIC\crosspy\data\Siyang\'; % '2' is using the consetutive image as the refernce image
 DIC_method      = 2; % '1' is used as the first image as the reference image (suitable for small deformation)
 % '2' is used as the previous image as the reference image (prefered for large deformation)
 Image_Interval  = 1; %define the interval between the reference and test pattern for Method 2
