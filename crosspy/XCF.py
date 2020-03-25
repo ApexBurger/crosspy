@@ -65,6 +65,21 @@ def gen_filters(roi, filter_settings=[4,2,16,32]):
     return fftfilter, hfilter
 
 def freg(ROI_test,ROI_ref,XCF_roisize,XCF_mesh,data_fill):
+    
+    #FREG Register two FFTs to subpixel accuracy
+    #a reduced form of the code submitted to the matlab file exchange
+    #http://www.mathworks.co.uk/matlabcentral/fileexchange/18401-efficient-subpixel-image-registration-by-cross-correlation
+    
+    #reported in the literature:
+    #Manuel Guizar-Sicairos, Samuel T. Thurman, and James R. Fienup
+    #"Efficient subpixel image registration algorithms," Opt. Lett. 33, 156-158 (2008).
+    
+    #modified to handle the filtered FFT sizes
+    #TBB 2012
+    
+    #ported to python
+    #TPM 2020
+    
     CC=np.zeros((XCF_roisize*2,XCF_roisize*2),dtype='complex')
     red_roisize=len(data_fill)
 
