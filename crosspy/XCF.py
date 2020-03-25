@@ -3,6 +3,8 @@
 import numpy as np 
 import numpy.fft 
 
+import crosspy
+
 def gen_filters(roi, filter_settings=[4,2,16,32]):
     #genearte FFT filters
 
@@ -175,5 +177,5 @@ def fxcorr(subset1,subset2,d):
     ROI_ref=f_s1_red*fftfil_red
     ROI_test=f_s2_red*fftfil_red
 
-    col_shift, row_shift, CCmax = freg(ROI_test,ROI_ref,roi[0],roi[2],data_fill)
+    col_shift, row_shift, CCmax = crosspy.freg(ROI_test,ROI_ref,roi[0],roi[2],data_fill)
     return col_shift, row_shift, CCmax

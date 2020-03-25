@@ -2,14 +2,11 @@
 
 from PIL import Image
 import numpy as np
-from imprep_functions import *
-from ImageCorrection_functions import *
-from XCF_functions import *
-from runDIC_functions import *
 import matplotlib.pyplot as plt
 from multiprocessing import Pool
 import functools
-from StrainCalc_functions import *
+
+import crosspy
 
 class Imset:
 
@@ -17,6 +14,8 @@ class Imset:
     # Inputs are folder path and image file extension - will identify all images of that same extension within the folder.
 
     def __init__(self, folder_path,extension):
+
+        import crosspy
 
         self.folder = folder_path
         self.extension = extension
@@ -72,16 +71,16 @@ class DIC:
             self.ims=images.imload(range(0,images.n_ims))
             self.n_ims=images.n_ims
 
-        if isinstance(images,np.ndarray):
+        elif isinstance(images,np.ndarray):
             self.ims=images
             self.n_ims=images.shape[2]
 
         self.roi=list([roi['size_pass'],roi['overlap_percentage'],roi['xcf_mesh']])
 
-        self.n_rows,self.n_cols,self.ss_locations,self.ss_spacing=gen_ROIs(self.ims.shape[0:2],self.roi)
+        self.n_rows,self.n_cols,self.ss_locations,self.ss_spacing=crosspy.gen_ROIs(self.ims.shape[0:2],self.roi)
         self.n_subsets=self.ss_locations.shape[0]
 
-        self.fftfilter,self.hfilter=gen_filters(self.roi,filter_settings)
+        self.fftfilter,self.hfilter=crosspy.gen_filters(self.roi,filter_settings)
         self.filter_settings=filter_settings
 
         self.x_pos = self.ss_locations[:,0].reshape(self.n_rows,self.n_cols)+roi['size_pass']/2
@@ -101,7 +100,7 @@ class DIC:
         for i in range(0,self.n_ims-1):
             if par: suffix=' (parallel) '
             print('Running sequential DIC on image pair ' +str(i+1)+' of '+str(self.n_ims-1)+suffix)
-            dx_maps[:,:,i],dy_maps[:,:,i],ph_maps[:,:,i]=run_DIC(self,[i,i+1],par,cores,chunk_length=50)
+            dx_maps[:,:,i],dy_maps[:,:,i],ph_maps[:,:,i]=crosspy.run_DIC(self,[i,i+1],par,cores,chunk_length=50)
 
         self.ph_maps=ph_maps
         self.dx_maps=dx_maps
@@ -124,7 +123,7 @@ class DIC:
             if par: suffix=' (parallel) '
 
             print('Running cumulative DIC on image pair ' +str(i+1)+' of '+str(self.n_ims-1)+suffix)
-            dx_maps[:,:,i],dy_maps[:,:,i],ph_maps[:,:,i]=run_DIC(self,[0,i+1],par,cores,chunk_length)
+            dx_maps[:,:,i],dy_maps[:,:,i],ph_maps[:,:,i]=crosspy.run_DIC(self,[0,i+1],par,cores,chunk_length)
 
         self.ph_maps=ph_maps
         self.dx_maps=dx_maps
@@ -164,7 +163,7 @@ class DIC:
 
         for i in range(0,self.mapnos):
             print('Calculating sequential strain on map ' +str(i+1)+' of '+str(self.mapnos)+suffix)
-            strain[:,:,:,:,i], strain_eff[:,:,:,i], rotation[:,:,:,:,i], F = strain_calc(self,
+            strain[:,:,:,:,i], strain_eff[:,:,:,i], rotation[:,:,:,:,i], F = crosspy.strain_calc(self,
                 mapnos=i, strain_method=strain_method)
 
         self.strain_11 = strain[:,:,0,0,:]
@@ -178,7 +177,7 @@ class DIC:
         #Perform strain calculation on sequential images, using the first as a reference.
         pass
     def correct(self):
-        images_corrected=im_correct(self.imageset,self)
+        images_corrected=crosspy.im_correct(self.imageset,self)
         return images_corrected
     
     def plot_strains(self,colmap='RdBu'):
@@ -188,13 +187,13 @@ class DIC:
 
         for i in range(0,self.mapnos):
             fig,((ax11,ax12),(ax21,ax22))=plt.subplots(2,2,figsize=(10,10)) 
-            ax11.imshow(self.strain_11[:,:,i],cmap=colmap)
+            ax11.imshow(self.strain_11[:,:,i].squeeze(),cmap=colmap)
             ax11.set_title('XX strains, map '+str(i+1))
-            ax12.imshow(self.strain_22[:,:,i],cmap=colmap)
+            ax12.imshow(self.strain_22[:,:,i].squeeze(),cmap=colmap)
             ax12.set_title('YY strains, map '+str(i+1))
-            ax21.imshow(self.strain_12[:,:,i],cmap=colmap)
+            ax21.imshow(self.strain_12[:,:,i].squeeze(),cmap=colmap)
             ax21.set_title('Shear strains, map '+str(i+1))
-            ax22.imshow(self.strain_eff[:,:,i],cmap=colmap)
+            ax22.imshow(self.strain_eff[:,:,i].squeeze(),cmap=colmap)
             ax22.set_title('Effective strain, map '+str(i+1))
             plt.show()
 

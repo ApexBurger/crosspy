@@ -1,5 +1,6 @@
 # Strain calculation functions
 import numpy as np
+import crosspy
 
 def strain_calc(d, mapnos = 0, strain_method = 'l2'):
     # This function calculates the strain between two images
@@ -16,13 +17,13 @@ def strain_calc(d, mapnos = 0, strain_method = 'l2'):
     dy = d.dy_maps[:,:,mapnos]
     # determine strain method
     if strain_method == '9nodes':
-        e11, e22, e12, eeff, R, F = strain_n9()
+        e11, e22, e12, eeff, R, F = crosspy.strain_n9()
     elif strain_method == '8nodes':
-        e11, e22, e12, eeff, R, F = strain_n8()
+        e11, e22, e12, eeff, R, F = crosspy.strain_n8()
     elif strain_method == '4nodes':
-        e11, e22, e12, eeff, R, F = strain_n4()
+        e11, e22, e12, eeff, R, F = crosspy.strain_n4()
     elif strain_method == 'l2':
-        e, e_eff, r, f = strain_l2(dx, dy, x, y)
+        e, e_eff, r, f = crosspy.strain_l2(dx, dy, x, y)
     else:
         raise Exception('Invalid strain method!')
 
@@ -30,13 +31,13 @@ def strain_calc(d, mapnos = 0, strain_method = 'l2'):
     return e, e_eff, r, f
     
 def strain_n4():
-    raise Exception('WORK IN PROGRESS')
+    raise Exception('U A KEEN BEAN - WORK IN PROGRESS')
 
 def strain_n8():
-    raise Exception('WORK IN PROGRESS')
+    raise Exception('U A MEAN TEEN - WORK IN PROGRESS')
 
 def strain_n9():
-    raise Exception('WORK IN PROGRESS')
+    raise Exception('U A LEAN MACHINE - WORK IN PROGRESS')
 
 def strain_l2(dx, dy, x, y):
     # Function to determine strain via polynomial fitting and l2 min
@@ -51,8 +52,8 @@ def strain_l2(dx, dy, x, y):
     e12_temp = np.zeros(shape=(rows,cols))
     
     # First obtain strain values for corners and edges of the map
-    e11_temp, e22_temp, e12_temp = strain_l2_corners(dx, dy, x, y, e11_temp, e22_temp, e12_temp)
-    e11_temp, e22_temp, e12_temp = strain_l2_edges(dx, dy, x, y, e11_temp, e22_temp, e12_temp)
+    e11_temp, e22_temp, e12_temp = crosspy.strain_l2_corners(dx, dy, x, y, e11_temp, e22_temp, e12_temp)
+    e11_temp, e22_temp, e12_temp = crosspy.strain_l2_edges(dx, dy, x, y, e11_temp, e22_temp, e12_temp)
 
     # Obtain bulk values in loop below
     for i in range(0,rows-1):
@@ -101,6 +102,8 @@ def strain_l2(dx, dy, x, y):
     F = F
     
     return strain, strain_effective, rotation, F
+
+    
 def strain_l2_corners(dx, dy, x, y, e11, e22, e12):
     # Use first order polynomial fitting for the 4 corners of the map
     rows = np.size(dx,0)-1

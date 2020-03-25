@@ -1,5 +1,6 @@
 # Bergsmo & McAuliffe 2020
 import numpy as np
+import crosspy
 
 def gen_ROIs(imshape,roi):
     #generate where the subsets are for an arbitrary image size
