@@ -205,6 +205,30 @@ class DIC:
             ax22.imshow(self.strain_eff[:,:,i].squeeze(),cmap=colmap)
             ax22.set_title('Effective strain, map '+str(i+1))
 
+    def save_data(self, output_folder = None):
+        if output_folder == None:
+            output_folder = self.images.folder
+
+        if self.dx_maps.any() == False:
+            raise Exception('No displacement data to save!')
+        elif self.strain_11.any() == False:
+            print('No strain maps available, only displacement data will be saved!')
+
+        
+        
+        with h5py.file('results'+str(self.roi[0])+'_'+str(self.roi[1]), 'w') as f:
+            f.create_dataset('dx maps', data=self.dx_maps)
+            f.create_dataset('dy maps', data=self.dy_maps)
+            f.create_dataset('Peak heights', data=self.ph_maps)
+            f.create_dataset('Strain 11', data=self.strain11)
+            f.create_dataset('Strain 22', data=self.strain22)
+            f.create_dataset('Strain 12', data=self.strain22)
+            f.create_dataset('Effective strain', data=self.strain_eff)
+
+
+
+
+
 class Im(Imset):
 
     def __init__(self):
