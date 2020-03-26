@@ -72,7 +72,7 @@ class DIC:
             self.ims=images.imload(range(0,images.n_ims))
             self.n_ims=images.n_ims
 
-        elif isinstance(images,np.ndarray):
+        else:
             self.ims=images
             self.n_ims=images.shape[2]
 
@@ -87,9 +87,10 @@ class DIC:
         self.x_pos = self.ss_locations[:,0].reshape(self.n_rows,self.n_cols)+roi['size_pass']/2
         self.y_pos = self.ss_locations[:,1].reshape(self.n_rows,self.n_cols)+roi['size_pass']/2
 
-    def run_sequential(self,par=False,cores=None,chunk_length=50):
+    def run_sequential(self,cores=None,ffttype='fftw_numpy'):
         #Perform DIC on consecutive images, using the previous as a reference.
-        #chunks and cores only apply if par=True ; if cores=None looks for maximum for your system.
+        #if cores=None looks for maximum for your system.
+        #fft type can be: 'fftw_numpy' (default), 'fftw_scipy', or anything else gives numpy
 
         #preallocate for all DIC pairs
         ph_maps=np.zeros((self.n_rows,self.n_cols,self.n_ims-1))
@@ -100,9 +101,8 @@ class DIC:
         t0=time.time()
 
         for i in range(0,self.n_ims-1):
-            if par: suffix=' (parallel) '
             print('Running sequential DIC on image pair ' +str(i+1)+' of '+str(self.n_ims-1)+suffix)
-            dx_maps[:,:,i],dy_maps[:,:,i],ph_maps[:,:,i]=crosspy.run_DIC(self,[i,i+1],par,cores,chunk_length=50)
+            dx_maps[:,:,i],dy_maps[:,:,i],ph_maps[:,:,i]=crosspy.run_DIC(self,[i,i+1],cores)
 
         self.ph_maps=ph_maps
         self.dx_maps=dx_maps
@@ -111,23 +111,22 @@ class DIC:
 
         #return dx_maps, dy_maps, ph_maps
 
-    def run_cumulative(self,par=False,cores=None,chunk_length=50):
+    def run_cumulative(self,cores=None,ffttype='fftw_numpy'):
         #Perform DIC on sequential images, using the first as a reference.
-        #chunks and cores only apply if par=True ; if cores=None looks for maximum for your system.
+        #if cores=None looks for maximum for your system.
+        #fft type can be: 'fftw_numpy' (default), 'fftw_scipy', or anything else gives numpy
 
         #preallocate for all DIC pairs
         ph_maps=np.zeros((self.n_rows,self.n_cols,self.n_ims-1))
         dx_maps=np.zeros((self.n_rows,self.n_cols,self.n_ims-1))
         dy_maps=np.zeros((self.n_rows,self.n_cols,self.n_ims-1))
 
-        suffix=''
+        suffix=' ...'
         t0=time.time()
 
         for i in range(0,self.n_ims):
-            if par: suffix=' (parallel) ...'
-
             print('Running cumulative DIC on image pair ' +str(i+1)+' of '+str(self.n_ims-1)+suffix)
-            dx_maps[:,:,i],dy_maps[:,:,i],ph_maps[:,:,i]=crosspy.run_DIC(self,[0,i+1],par,cores,chunk_length)
+            dx_maps[:,:,i],dy_maps[:,:,i],ph_maps[:,:,i]=crosspy.run_DIC(self,[0,i+1],cores)
 
         self.ph_maps=ph_maps
         self.dx_maps=dx_maps

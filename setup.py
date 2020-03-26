@@ -13,7 +13,7 @@ setuptools.setup(
     long_description_content_type="",
     url="",
     packages=['crosspy'],
-    install_requires=['matplotlib','scipy','numpy','pillow','h5py','pathlib'],
+    install_requires=['matplotlib','scipy','numpy','pillow','h5py','pathlib','pyfftw'],
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: Apache 2.0 License",
