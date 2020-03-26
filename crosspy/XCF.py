@@ -2,8 +2,38 @@
 
 import numpy as np 
 import numpy.fft 
+import multiprocessing
+import pyfftw 
 
 import crosspy
+
+def plan_ffts(d,ffttype='fftw_numpy'):
+    
+    subset_shape=d.roi[0]
+    #xcf_mesh=
+
+    a = pyfftw.empty_aligned((subset_shape, subset_shape), dtype='complex128')
+    b = pyfftw.empty_aligned((subset_shape, subset_shape), dtype='complex128')
+    c = pyfftw.empty_aligned((2*subset_shape, 2*subset_shape), dtype='complex128')
+    d = pyfftw.empty_aligned((2*subset_shape, 2*subset_shape), dtype='complex128')
+
+    # Over both axes
+    forward_fft = pyfftw.FFTW(a, b, axes=(0,1))
+    inverse_fft = pyfftw.FFTW(a,b ,axes=(0,1),direction='FFTW_BACKWARD')
+    forward_xcf_fft1 = pyfftw.FFTW(c,d, axes=(0,1))
+    inverse_xcf_fft1 = pyfftw.FFTW(c,d, axes=(0,1),direction='FFTW_BACKWARD')
+
+    prepared_ffts=[forward_fft,inverse_fft,forward_xcf_fft1,inverse_xcf_fft1]
+
+    if ffttype=='fftw_numpy':
+        prepared_ffts=[pyfftw.interfaces.numpy_fft.fft2,pyfftw.interfaces.numpy_fft.ifft2,pyfftw.interfaces.numpy_fft.fft2,pyfftw.interfaces.numpy_fft.ifft2]
+    elif ffttype=='fftw_scipy':
+        prepared_ffts=[pyfftw.interfaces.scipy_fftpack.fft2,pyfftw.interfaces.scipy_fftpack.ifft2,pyfftw.interfaces.scipy_fftpack.fft2,pyfftw.interfaces.scipy_fftpack.ifft2]
+    else:
+        prepared_ffts=[np.fft.fft2,np.fft.ifft2,np.fft.fft2,np.fft.ifft2]
+
+    return prepared_ffts
+
 
 def gen_filters(roi, filter_settings=[4,2,16,32]):
     #genearte FFT filters
@@ -64,7 +94,8 @@ def gen_filters(roi, filter_settings=[4,2,16,32]):
     
     return fftfilter, hfilter
 
-def freg(ROI_test,ROI_ref,XCF_roisize,XCF_mesh,data_fill):
+
+def freg(ROI_test,ROI_ref,XCF_roisize,XCF_mesh,data_fill,prepared_ffts):
     
     #FREG Register two FFTs to subpixel accuracy
     #a reduced form of the code submitted to the matlab file exchange
@@ -79,18 +110,24 @@ def freg(ROI_test,ROI_ref,XCF_roisize,XCF_mesh,data_fill):
     
     #ported to python
     #TPM 2020
+
+    forward_fft=prepared_ffts[0]
+    inverse_fft=prepared_ffts[1]
+    forward_xcf_fft1=prepared_ffts[2]
+    inverse_xcf_fft1=prepared_ffts[3]
     
     CC=np.zeros((XCF_roisize*2,XCF_roisize*2),dtype='complex')
     red_roisize=len(data_fill)
 
     ind1=int(XCF_roisize-np.floor(red_roisize/2))
     ind2=int(XCF_roisize+np.floor((red_roisize-1)/2))+1
+    
     #fft shifting required to make it cross-correlation rather than convolution
     f=np.fft.fftshift(ROI_test*np.conj(ROI_ref))
     CC[ind1:ind2,ind1:ind2]= f
 
     #inverse FFT
-    CC=np.fft.ifft2(CC)
+    CC=inverse_xcf_fft1(CC)
     
     #get the maximum of the XCF and its location
     chi=np.amax(CC)
@@ -157,7 +194,10 @@ def freg(ROI_test,ROI_ref,XCF_roisize,XCF_mesh,data_fill):
 
     return col_shift, row_shift, CCmax
 
-def fxcorr(subset1,subset2,d):
+def fxcorr(subset1,subset2,d,prepared_ffts):
+
+    forward_fft=prepared_ffts[0]
+    inverse_fft=prepared_ffts[1]
 
     roi=d.roi    
     fftfil=d.fftfilter
@@ -169,8 +209,8 @@ def fxcorr(subset1,subset2,d):
     subset2_filt=hfil*subset2
 
     #FFT the subsets
-    f_s1=np.fft.fft2(subset1_filt)
-    f_s2=np.fft.fft2(subset2_filt)
+    f_s1=forward_fft(subset1_filt)
+    f_s2=forward_fft(subset2_filt)
 
     fill1=(filters_settings[2]+filters_settings[3])
     fill2=(roi[0]-(filters_settings[2]+filters_settings[3]-1))
@@ -192,5 +232,5 @@ def fxcorr(subset1,subset2,d):
     ROI_ref=f_s1_red*fftfil_red
     ROI_test=f_s2_red*fftfil_red
 
-    col_shift, row_shift, CCmax = crosspy.freg(ROI_test,ROI_ref,roi[0],roi[2],data_fill)
+    col_shift, row_shift, CCmax = freg(ROI_test,ROI_ref,roi[0],roi[2],data_fill,prepared_ffts)
     return col_shift, row_shift, CCmax
