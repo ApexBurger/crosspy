@@ -1,16 +1,16 @@
 import numpy as np
-from imprep_functions import *
-from XCF_functions import *
 import matplotlib.pyplot as plt
 from multiprocessing import Pool, Process, Queue
 import functools
 
+import crosspy
+
 def subset_compare(d,imnos,subset_n):
     #grab the reference and test subsets, and get subpixel registration
-    ref=get_subset(d.ims,d.roi[0],d.ss_locations,subset_n,imnos[0])
-    test=get_subset(d.ims,d.roi[0],d.ss_locations,subset_n,imnos[1])
+    ref=crosspy.get_subset(d.ims,d.roi[0],d.ss_locations,subset_n,imnos[0])
+    test=crosspy.get_subset(d.ims,d.roi[0],d.ss_locations,subset_n,imnos[1])
     #get the displacements
-    dxs,dys,phs=fxcorr(ref,test,d)
+    dxs,dys,phs=crosspy.fxcorr(ref,test,d)
     #print(str(subset_n))
     return dxs,dys,phs
 
@@ -26,10 +26,10 @@ def subset_compare_batch(d,imnos,batch):
         subset_n=batch[i]
 
         #grab the reference and test subsets, and get subpixel registration
-        ref=get_subset(d.ims,d.roi[0],d.ss_locations,subset_n,imnos[0])
-        test=get_subset(d.ims,d.roi[0],d.ss_locations,subset_n,imnos[1])
+        ref=crosspy.get_subset(d.ims,d.roi[0],d.ss_locations,subset_n,imnos[0])
+        test=crosspy.get_subset(d.ims,d.roi[0],d.ss_locations,subset_n,imnos[1])
         #get the displacements
-        dx,dy,ph=fxcorr(ref,test,d)
+        dx,dy,ph=crosspy.fxcorr(ref,test,d)
 
         #append these
         dx_batch[i]=dx
@@ -92,11 +92,11 @@ def run_DIC(d,imnos=[0,1],par=False,cores=5,chunk_length=50):
         dys=np.zeros(d.n_subsets)
 
         for subset_n in range(0,d.n_subsets):
-            dxs[subset_n],dys[subset_n],phs[subset_n]=subset_compare(d,imnos,subset_n)
+            dxs[subset_n],dys[subset_n],phs[subset_n]=crosspy.subset_compare(d,imnos,subset_n)
 
     #parallel version
     if par==True:
-        dxs,dys,phs = subset_compare_par(d,imnos,cores,chunk_length)
+        dxs,dys,phs = crosspy.subset_compare_par(d,imnos,cores,chunk_length)
 
     #translate best_dxs etc back onto image grid
     dx_map=np.reshape(dxs,(d.n_rows,d.n_cols),'F')
