@@ -24,14 +24,15 @@ if __name__=='__main__':
     #dic_1stpass.plot_displacements()
 
     # # correct the images and instantiate a new DIC class
-    roi_2ndpass = dict(size_pass = 200, overlap_percentage = 80, xcf_mesh=250)
+    roi_2ndpass = dict(size_pass = 100, overlap_percentage = 80, xcf_mesh=250)
     dic_2ndpass = DIC(dic_1stpass.correct(),roi_2ndpass,filter_settings)
 
     # # run the second pass
     dic_2ndpass.run_sequential()
-    #dic_2ndpass.plot_displacements()
+    dic_2ndpass.plot_displacements()
     
     # # strain calc
     dic_2ndpass.strain_sequential(strain_method='l2')
-
+    dic_2ndpass.plot_strains()
+    
 # %%
