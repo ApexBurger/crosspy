@@ -5,6 +5,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from multiprocessing import Pool
 import functools
+import time
 
 import crosspy
 
@@ -95,7 +96,8 @@ class DIC:
         dx_maps=np.zeros((self.n_rows,self.n_cols,self.n_ims-1))
         dy_maps=np.zeros((self.n_rows,self.n_cols,self.n_ims-1))
 
-        suffix=''
+        suffix=' ...'
+        t0=time.time()
 
         for i in range(0,self.n_ims-1):
             if par: suffix=' (parallel) '
@@ -105,6 +107,7 @@ class DIC:
         self.ph_maps=ph_maps
         self.dx_maps=dx_maps
         self.dy_maps=dy_maps
+        print('... Completed in (s) '+str(time.time()-t0))
 
         #return dx_maps, dy_maps, ph_maps
 
@@ -118,9 +121,10 @@ class DIC:
         dy_maps=np.zeros((self.n_rows,self.n_cols,self.n_ims-1))
 
         suffix=''
+        t0=time.time()
 
         for i in range(0,self.n_ims):
-            if par: suffix=' (parallel) '
+            if par: suffix=' (parallel) ...'
 
             print('Running cumulative DIC on image pair ' +str(i+1)+' of '+str(self.n_ims-1)+suffix)
             dx_maps[:,:,i],dy_maps[:,:,i],ph_maps[:,:,i]=crosspy.run_DIC(self,[0,i+1],par,cores,chunk_length)
@@ -128,7 +132,7 @@ class DIC:
         self.ph_maps=ph_maps
         self.dx_maps=dx_maps
         self.dy_maps=dy_maps
-        
+        print('... Completed in (s) '+str(time.time()-t0))
         #return dx_maps, dy_maps, ph_maps
 
     def plot_displacements(self,colmap='RdBu'):
@@ -159,7 +163,8 @@ class DIC:
         strain_eff = np.zeros((self.n_rows,self.n_cols, 1, self.mapnos))
         rotation = np.zeros((self.n_rows, self.n_cols, 3, 3, self.mapnos))
         F = np.zeros((self.n_rows, self.n_cols, 3, 3, self.mapnos))
-        suffix=''
+        suffix=' ...'
+        t0=time.time()
 
         for i in range(0,self.mapnos):
             print('Calculating sequential strain on map ' +str(i+1)+' of '+str(self.mapnos)+suffix)
@@ -172,12 +177,16 @@ class DIC:
         self.strain_eff = strain_eff
         self.rotation = rotation
         self.deformation_gradient = F
+        print('... Completed in (s) '+str(time.time()-t0))
 
     def strain_cumulative(self):
         #Perform strain calculation on sequential images, using the first as a reference.
         pass
     def correct(self):
+        print('Correcting images based on DIC results ...')
+        t0=time.time()
         images_corrected=crosspy.im_correct(self.imageset,self)
+        print('... Completed in (s) '+str(time.time()-t0))
         return images_corrected
     
     def plot_strains(self,colmap='RdBu'):
