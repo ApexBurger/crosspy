@@ -37,7 +37,7 @@ end
 %% plot some maps
 % strain
 comp_1 = 1; %i.e. x = 1, y = 2, z = 3 (remember z is bollocks as it's out of plane)
-comp_2 = 1;
+comp_2 = 2;
 
 % which components
 if c_lim_auto == 1
@@ -50,8 +50,8 @@ end
 
 figure
 % plot
-%imagesc(Res_data.Data.Strain{1}(:,:,comp_1,comp_2))
-imagesc(Res_data.Data.Strain_ef)
+imagesc(Res_data.Data.Strain{1}(:,:,comp_1,comp_2))
+%imagesc(Res_data.Data.Strain_ef)
 % settings
 caxis([c_min c_max])
 fig_name = ['e_' num2str(comp_1) '_,_' num2str(comp_2)];
