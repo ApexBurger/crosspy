@@ -72,7 +72,7 @@ class DIC:
             self.ims=images.imload(range(0,images.n_ims))
             self.n_ims=images.n_ims
 
-        elif isinstance(images,np.ndarray):
+        else:
             self.ims=images
             self.n_ims=images.shape[2]
 
