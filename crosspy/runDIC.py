@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import multiprocessing
 import functools
 import pyfftw
+import numexpr as ne
 
 import crosspy
 
@@ -84,6 +85,12 @@ def subset_compare(d,imnos,subset_n,prepared_ffts):
 
 def run_DIC(d,imnos=[0,1],cores=None,ffttype='fftw_numpy'):
     #fft type can be : fftw_numpy (default), fftw_scipy, else defaults to numpy
+
+    #set up numexpr to run with the chosen number of threads
+    if cores==None:
+        ne_threads=multiprocessing.cpu_count()
+
+    ne.set_num_threads(ne_threads)
 
     #preallocate for this DIC pair
     phs=np.zeros(d.n_subsets)
