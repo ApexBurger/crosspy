@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 from multiprocessing import Pool
 import functools
 import time
+import h5py
 
 import crosspy
 
@@ -75,13 +76,13 @@ class DIC:
         else:
             self.ims=images
             self.n_ims=images.shape[2]
-
+        self.folder = images.folder
         self.roi=list([roi['size_pass'],roi['overlap_percentage'],roi['xcf_mesh']])
 
         self.n_rows,self.n_cols,self.ss_locations,self.ss_spacing=crosspy.gen_ROIs(self.ims.shape[0:2],self.roi)
         self.n_subsets=self.ss_locations.shape[0]
 
-        self.fftfilter,self.hfilter=crosspy.gen_filters(self.roi,filter_settings)
+        self.fftfilter,self.hfilter = crosspy.gen_filters(self.roi,filter_settings)
         self.filter_settings=filter_settings
 
         self.x_pos = self.ss_locations[:,0].reshape(self.n_rows,self.n_cols)+roi['size_pass']/2
@@ -150,7 +151,7 @@ class DIC:
             
             plt.show()
 
-    def strain_sequential(self, strain_method='l2'):
+    def calculate_strain(self, strain_method='l2'):
         if self.dx_maps.any()==False:
             raise Exception('No displacements available for strain calculation!')
         #Perform strain calculation on consecutive images, using the previous as a reference.
@@ -166,7 +167,7 @@ class DIC:
         t0=time.time()
 
         for i in range(0,self.mapnos):
-            print('Calculating sequential strain on map ' +str(i+1)+' of '+str(self.mapnos)+suffix)
+            print('Calculating strain on map ' +str(i+1)+' of '+str(self.mapnos)+suffix)
             strain[:,:,:,:,i], strain_eff[:,:,:,i], rotation[:,:,:,:,i], F = crosspy.strain_calc(self,
                 mapnos=i, strain_method=strain_method)
 
@@ -178,9 +179,6 @@ class DIC:
         self.deformation_gradient = F
         print('... Completed in (s) '+str(time.time()-t0))
 
-    def strain_cumulative(self):
-        #Perform strain calculation on sequential images, using the first as a reference.
-        pass
     def correct(self):
         print('Correcting images based on DIC results ...')
         t0=time.time()
@@ -188,47 +186,56 @@ class DIC:
         print('... Completed in (s) '+str(time.time()-t0))
         return images_corrected
     
-    def plot_strains(self,colmap='RdBu'):
-        
+    def plot_strains(self,colmap='RdBu',vmin=0, vmax=0.2):
+        print('Quick plotting strains')
         if self.strain_eff.any()==False:
             raise Exception('No strain results to plot!')
 
         for i in range(0,self.mapnos):
-            fig,((ax11,ax12),(ax21,ax22))=plt.subplots(2,2,figsize=(10,10)) 
-            ax11.imshow(self.strain_11[:,:,i].squeeze(),cmap=colmap)
+            fig,((ax11,ax12),(ax21,ax22))=plt.subplots(2,2,figsize=(10,10))
+            e11 = ax11.imshow(self.strain_11[:,:,i].squeeze(),cmap=colmap, vmin=vmin, vmax=vmax)
             ax11.set_title('XX strains, map '+str(i+1))
-            ax12.imshow(self.strain_22[:,:,i].squeeze(),cmap=colmap)
+            cbar1 = fig.colorbar(e11, ax=ax11)
+            e22 = ax12.imshow(self.strain_22[:,:,i].squeeze(),cmap=colmap, vmin=vmin, vmax=vmax)
             ax12.set_title('YY strains, map '+str(i+1))
-            ax21.imshow(self.strain_12[:,:,i].squeeze(),cmap=colmap)
+            cbar1 = fig.colorbar(e22, ax=ax12)
+            e12 = ax21.imshow(self.strain_12[:,:,i].squeeze(),cmap=colmap, vmin=vmin, vmax=vmax)
             ax21.set_title('Shear strains, map '+str(i+1))
-            ax22.imshow(self.strain_eff[:,:,i].squeeze(),cmap=colmap)
+            cbar1 = fig.colorbar(e12, ax=ax21)
+            eff = ax22.imshow(self.strain_eff[:,:,i].squeeze(),cmap=colmap, vmin=vmin, vmax=vmax)
             ax22.set_title('Effective strain, map '+str(i+1))
+            cbar1 = fig.colorbar(eff, ax=ax22)
+
+    def plot_strain_meta(self, bins=5):
+        for i in range(0,self.mapnos):
+            fig,((ax11,ax12),(ax21,ax22))=plt.subplots(2,2,figsize=(10,10)) 
+            ax11.hist(self.strain_11[:,:,i].flatten(), density=True, bins=bins)
+            ax11.set_title('XX strains histogram, map '+str(i+1))
+            ax12.hist(self.strain_22[:,:,i].flatten(), density=True, bins=bins)
+            ax12.set_title('YY strains histogram, map '+str(i+1))
+            ax21.hist(self.strain_12[:,:,i].flatten(), density=True, bins=bins)
+            ax21.set_title('Shear strains histogram, map '+str(i+1))
+            ax22.hist(self.strain_eff[:,:,i].flatten(), density=True, bins=bins)
+            ax22.set_title('Effective strain histogram, map '+str(i+1))
 
     def save_data(self, output_folder = None):
+        from pathlib import Path
         if output_folder == None:
-            output_folder = self.images.folder
-
+            output_folder = self.folder
+        file = ('results'+str(self.roi[0])+'_'+str(self.roi[1]))
         if self.dx_maps.any() == False:
             raise Exception('No displacement data to save!')
         elif self.strain_11.any() == False:
             print('No strain maps available, only displacement data will be saved!')
-
+        else:
+            print('Saving displacement and strain data')
         
-        
-        with h5py.file('results'+str(self.roi[0])+'_'+str(self.roi[1]), 'w') as f:
+        with h5py.File(file, 'w') as f:
             f.create_dataset('dx maps', data=self.dx_maps)
             f.create_dataset('dy maps', data=self.dy_maps)
             f.create_dataset('Peak heights', data=self.ph_maps)
-            f.create_dataset('Strain 11', data=self.strain11)
-            f.create_dataset('Strain 22', data=self.strain22)
-            f.create_dataset('Strain 12', data=self.strain22)
+            f.create_dataset('Strain 11', data=self.strain_11)
+            f.create_dataset('Strain 22', data=self.strain_22)
+            f.create_dataset('Strain 12', data=self.strain_12)
             f.create_dataset('Effective strain', data=self.strain_eff)
 
-
-
-
-
-class Im(Imset):
-
-    def __init__(self):
-        pass
