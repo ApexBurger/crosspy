@@ -4,6 +4,7 @@ import numpy as np
 import numpy.fft 
 import multiprocessing
 import pyfftw 
+import numexpr
 
 #import crosspy
 
@@ -176,10 +177,14 @@ def freg(ROI_test,ROI_ref,XCF_roisize,XCF_mesh,data_fill,prepared_ffts):
     m1=np.expand_dims(m,0)
     m2=np.expand_dims(m,1)
 
-    kernc=np.exp(prefac*(c_i)@(m1-coff))
-    kernr=np.exp(prefac*(m2-roff)@(r_i))
-    kern = ROI_ref*np.conj(ROI_test)
-    CC2 = np.conj(kernr@kern@kernc)
+    arg1=(c_i)@(m1-coff)
+    arg2=(m2-roff)@(r_i)
+
+    kernc=ne.evaluate('exp(prefac*arg1)')
+    kernr=ne.evaluate('exp(prefac*arg2)')
+    kern = ROI_ref*ne.evaluate('exp(ROI_test)')
+    arg3=kernr@kern@kernc
+    CC2 = ne.evaluate('conj(arg3)')
 
     #locate maximum and map back to original pixel grid
     CCmax=np.abs(np.amax(CC2))
