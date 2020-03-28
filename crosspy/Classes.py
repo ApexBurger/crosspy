@@ -76,9 +76,8 @@ class DIC:
         else:
             self.ims=images
             self.n_ims=images.shape[2]
-        self.folder = images.folder
+            
         self.roi=list([roi['size_pass'],roi['overlap_percentage'],roi['xcf_mesh']])
-
         self.n_rows,self.n_cols,self.ss_locations,self.ss_spacing=crosspy.gen_ROIs(self.ims.shape[0:2],self.roi)
         self.n_subsets=self.ss_locations.shape[0]
 
