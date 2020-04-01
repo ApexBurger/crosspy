@@ -1,6 +1,6 @@
 # Strain calculation functions
 import numpy as np
-#import crosspy
+import crosspy
 
 def strain_calc(d, mapnos = 0, strain_method = 'l2'):
     # This function calculates the strain between two images

@@ -6,13 +6,13 @@
 if __name__=='__main__':
     import os as o
     #o.chdir('/Users/tom/Documents/GitHub/crosspy/Code')
-    o.chdir('D:/DIC/crosspy/Code')
+    o.chdir('D:/DIC/crosspy/Code_dev')
     from Classes import *
     from ImagePreparation import *
     from XCF import *
     from pathlib import Path
     import time
-
+    import numexpr
     t0=time.time()
 
     folder_path = Path(r"D:\DIC\crosspy\data\Siyang")
@@ -54,15 +54,12 @@ dic_1stpass.plot_strains()
 
 #dic_1stpass.plot_strain_meta()
 import matplotlib.pyplot as plt
-# hdata = dic_1stpass.strain_11.flatten()
+from plotting import *
 
-# fig = plt.figure()
-# ax = plt.gca()
-# plt.hist(hdata, density=True,bins=3)
-# std = np.std(hdata)
-# mean = np.mean(hdata)
-# print(mean,std)
-dic_1stpass.plot_strain_meta()
+plot_4(dic_1stpass,0,cmap="RdBu")
+
+
+
 #%% save data
 
 dic_1stpass.save_data()

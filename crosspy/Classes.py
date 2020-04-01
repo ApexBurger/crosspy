@@ -185,25 +185,13 @@ class DIC:
         print('... Completed in (s) '+str(time.time()-t0))
         return images_corrected
     
-    def plot_strains(self,colmap='RdBu',vmin=0, vmax=0.2):
+    def plot_strains(self,colmap='RdBu'):
         print('Quick plotting strains')
         if self.strain_eff.any()==False:
             raise Exception('No strain results to plot!')
 
         for i in range(0,self.mapnos):
-            fig,((ax11,ax12),(ax21,ax22))=plt.subplots(2,2,figsize=(10,10))
-            e11 = ax11.imshow(self.strain_11[:,:,i].squeeze(),cmap=colmap, vmin=vmin, vmax=vmax)
-            ax11.set_title('XX strains, map '+str(i+1))
-            cbar1 = fig.colorbar(e11, ax=ax11)
-            e22 = ax12.imshow(self.strain_22[:,:,i].squeeze(),cmap=colmap, vmin=vmin, vmax=vmax)
-            ax12.set_title('YY strains, map '+str(i+1))
-            cbar1 = fig.colorbar(e22, ax=ax12)
-            e12 = ax21.imshow(self.strain_12[:,:,i].squeeze(),cmap=colmap, vmin=vmin, vmax=vmax)
-            ax21.set_title('Shear strains, map '+str(i+1))
-            cbar1 = fig.colorbar(e12, ax=ax21)
-            eff = ax22.imshow(self.strain_eff[:,:,i].squeeze(),cmap=colmap, vmin=vmin, vmax=vmax)
-            ax22.set_title('Effective strain, map '+str(i+1))
-            cbar1 = fig.colorbar(eff, ax=ax22)
+            crosspy.plot_4(self, i, colmap)
 
     def plot_strain_meta(self, bins=5):
         for i in range(0,self.mapnos):

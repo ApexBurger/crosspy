@@ -5,3 +5,5 @@ from crosspy.ImagePreparation import *
 from crosspy.runDIC import *
 from crosspy.StrainCalc import *
 from crosspy.XCF import *
+from crosspy.plotting import *
+from crosspy.discon import *

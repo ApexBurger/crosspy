@@ -4,7 +4,7 @@ import numpy as np
 import numpy.fft 
 import multiprocessing
 import pyfftw 
-import numexpr
+import numexpr as ne
 
 #import crosspy
 
@@ -179,7 +179,7 @@ def freg(ROI_test,ROI_ref,XCF_roisize,XCF_mesh,data_fill,prepared_ffts):
 
     arg1=(c_i)@(m1-coff)
     arg2=(m2-roff)@(r_i)
-
+    
     kernc=ne.evaluate('exp(prefac*arg1)')
     kernr=ne.evaluate('exp(prefac*arg2)')
     kern = ROI_ref*ne.evaluate('exp(ROI_test)')
