@@ -1,6 +1,6 @@
 # crosspy
 
-Python framework for Fourier-based image cross correlation.
+Python framework for FFT-based image cross correlation.
 
 Bergsmo & McAuliffe 2020
 
@@ -21,3 +21,7 @@ We employ an object-oriented approach:
 Additionally:
 - Subpixel Fourier registration functions are included in the .XCF module.
 - The discrete Fourier transform employed can be user-specified. We recommend the 'pyfftw_numpy' argument.
+
+------
+
+Install by command line navigating to /crosspy header directory, then run "pip install ." 
