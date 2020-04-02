@@ -17,13 +17,13 @@ def strain_calc(d, mapnos = 0, strain_method = 'l2'):
     dy = d.dy_maps[:,:,mapnos]
     # determine strain method
     if strain_method == '9nodes':
-        e11, e22, e12, eeff, R, F = crosspy.strain_n9()
+        e11, e22, e12, eeff, R, F = strain_n9()
     elif strain_method == '8nodes':
-        e11, e22, e12, eeff, R, F = crosspy.strain_n8()
+        e11, e22, e12, eeff, R, F = strain_n8()
     elif strain_method == '4nodes':
-        e11, e22, e12, eeff, R, F = crosspy.strain_n4()
+        e11, e22, e12, eeff, R, F = strain_n4()
     elif strain_method == 'l2':
-        e, e_eff, r, f = crosspy.strain_l2(dx, dy, x, y)
+        e, e_eff, r, f = strain_l2(dx, dy, x, y)
     else:
         raise Exception('Invalid strain method!')
 
@@ -52,8 +52,8 @@ def strain_l2(dx, dy, x, y):
     e12_temp = np.zeros(shape=(rows,cols))
     
     # First obtain strain values for corners and edges of the map
-    e11_temp, e22_temp, e12_temp = crosspy.strain_l2_corners(dx, dy, x, y, e11_temp, e22_temp, e12_temp)
-    e11_temp, e22_temp, e12_temp = crosspy.strain_l2_edges(dx, dy, x, y, e11_temp, e22_temp, e12_temp)
+    e11_temp, e22_temp, e12_temp = strain_l2_corners(dx, dy, x, y, e11_temp, e22_temp, e12_temp)
+    e11_temp, e22_temp, e12_temp = strain_l2_edges(dx, dy, x, y, e11_temp, e22_temp, e12_temp)
 
     # Obtain bulk values in loop below
     for i in range(0,rows-1):
@@ -93,7 +93,8 @@ def strain_l2(dx, dy, x, y):
             e_temp[i,j,:,:] = 0.5*(np.matmul(F.transpose(),F-np.eye(3)))
             rotation_temp[i,j,:,:] = R
             # Determine the effective strain
-            eeff_temp[i,j,:] = np.sqrt((2/3)*np.trace(np.dot(e_temp[i,j],e_temp[i,j])))
+            xs = np.dot(e_temp[i,j],e_temp[i,j])
+            eeff_temp[i,j,:] = np.sqrt((2/3)*np.tensordot(e_temp[i,j],e_temp[i,j]))
 
     # Form outputs
     strain = e_temp
