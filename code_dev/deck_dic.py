@@ -5,8 +5,8 @@
 #%%
 if __name__=='__main__':
     import os as o
-    #o.chdir('/Users/tom/Documents/GitHub/crosspy/Code')
-    o.chdir('D:/DIC/crosspy/Code_dev')
+    o.chdir('/Users/tom/Documents/GitHub/crosspy/Code_dev')
+    #o.chdir('D:/DIC/crosspy/Code_dev')
     from Classes import *
     from ImagePreparation import *
     from XCF import *
