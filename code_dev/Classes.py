@@ -13,28 +13,48 @@ from StrainCalc import *
 import time
 import h5py
 import numexpr
+
+from plotting import *
+
 #import crosspy
 
 class Imset:
 
     # This instantiates a DIC image class, holding metadata. The image is not loaded until the method .imload() is called.
     # Inputs are folder path and image file extension - will identify all images of that same extension within the folder.
+    # Additional input is which indices of the found list do you want to construct the image from. Default = 0 means all.
 
-    def __init__(self, folder_path,extension):
+    def __init__(self, folder_path,extension,indices=None):
 
         #import crosspy
 
         self.folder = folder_path
         self.extension = extension
-        self.paths = sorted(self.folder.glob('*.'+extension))
+        foundpaths = sorted(self.folder.glob('*.'+extension))
+
+        if indices==None:
+            self.paths = foundpaths
+        
+        else:
+            if type(indices)==int:
+                indices=[indices]
+            self.paths=[foundpaths[pathno] for _,pathno in enumerate(indices)]
+
         self.names=[path.name for i,path in enumerate(self.paths)]
         self.n_ims=len(self.names)
 
-        print('Found '+str(self.n_ims)+' images')
+        #print('Found '+str(self.n_ims)+' images')
+
 
     def __len__(self):
         return self.n_ims
         # this is redundant but nice to define
+
+
+    def __getitem__(self,nslice):
+        Imset2=Imset(self.folder,self.extension,nslice)
+        return Imset2
+
 
     def imload(self,numbers):
         # This loads the images identifed in the Imset enumerated by 'numbers'
@@ -192,7 +212,6 @@ class DIC:
     
     def plot_strains(self,colmap='RdBu',vmin=0, vmax=0.2):
         print('Quick plotting strains')
-        from plotting import *
         if self.strain_eff.any()==False:
             raise Exception('No strain results to plot!')
 

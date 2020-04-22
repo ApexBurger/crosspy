@@ -15,14 +15,14 @@ if __name__=='__main__':
     import numexpr
     t0=time.time()
 
-    folder_path = Path(r"D:\DIC\crosspy\data\Siyang")
-    Images = Imset(folder_path,'tif')
+    folder_path=Path(r'/Users/tom/Documents/GitHub/crosspy/data/Ben')
+    Images = Imset(folder_path,'tif',[0,1])
 
     # %% Instantiate and run the DIC
 
     # # fft filter settings: high pass, high pass width, low pass, low pass width
     filter_settings=[4,2,15,8]
-    roi_1stpass = dict(size_pass = 200, overlap_percentage = 70, xcf_mesh=250)
+    roi_1stpass = dict(size_pass = 600, overlap_percentage = 70, xcf_mesh=800)
 
     # t1=time.time()
     # # build the dic class (but don't run it yet):
