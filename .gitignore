@@ -9,3 +9,5 @@ data/Siyang/DIC_Results_ROI_60_80/e12.tif
 matlab_code/code/HR_DIC_process_single.m
 *.json
 /Code/__pycache__
+decks/.ipynb_checkpoints/deck-checkpoint.ipynb
+decks/.ipynb_checkpoints/Subset dev deck-checkpoint.ipynb
