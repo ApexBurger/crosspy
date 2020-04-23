@@ -15,14 +15,14 @@ if __name__=='__main__':
     import numexpr
     t0=time.time()
 
-    folder_path=Path(r'/Users/tom/Documents/GitHub/crosspy/data/Ben')
+    folder_path=Path(r'/Users/tom/Documents/GitHub/crosspy/data/Tom')
     Images = Imset(folder_path,'tif',[0,1])
 
     # %% Instantiate and run the DIC
 
     # # fft filter settings: high pass, high pass width, low pass, low pass width
     filter_settings=[4,2,15,8]
-    roi_1stpass = dict(size_pass = 800, overlap_percentage = 75, xcf_mesh=1000)
+    roi_1stpass = dict(size_pass = 300, overlap_percentage = 75, xcf_mesh=400)
 
     # t1=time.time()
     # # build the dic class (but don't run it yet):
@@ -34,7 +34,7 @@ if __name__=='__main__':
     # # correct the images and instantiate a new DIC class
     corrected_images=dic_1stpass.correct(method='polynomial',printing=1)
 
-    roi_2ndpass = dict(size_pass = 300, overlap_percentage = 80, xcf_mesh=500)
+    roi_2ndpass = dict(size_pass = 100, overlap_percentage = 80, xcf_mesh=500)
     dic_2ndpass = DIC(corrected_images,roi_2ndpass,filter_settings)
 
     # # run the second pass
@@ -49,7 +49,7 @@ if __name__=='__main__':
     dic_2ndpass.calculate_strain()
     dic_2ndpass.plot_strains()
 
-    
+
 #%%
 dic_2ndpass.save_data()
 

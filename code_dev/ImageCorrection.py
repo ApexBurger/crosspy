@@ -94,9 +94,6 @@ def rotation_fun(params, x_shift, y_shift, x_pos, y_pos):
 def polynom_im_correct(d,printing,fn):
     #fits a least squares image to plane for a function to generate A (x,y) for Ax=b, with x parameters to fit.
 
-    #get the first image to begin the output stack (needs to be row x col x 1)
-    imscorrected=np.expand_dims(d.ims[:,:,0].astype('float32'),-1)
-
     if fn==None:
 
         #create a function to generate the input parameters to the Ax=b mode
@@ -112,6 +109,12 @@ def polynom_im_correct(d,printing,fn):
 
     else:
         gen_A=fn
+
+    colmin=[]
+    rowmin=[]
+    colmax=[]
+    rowmax=[]
+    deformedimages=[]
 
     for imno in range(0,d.n_ims-1):
 
@@ -183,8 +186,10 @@ def polynom_im_correct(d,printing,fn):
 
         #get the bottom left corner of the image
         inds=np.argwhere(subset)
-        colmax_loc=np.argmax(inds[:,1])
-        row,col=inds[colmax_loc,:]
+        colmin+=[np.amin(inds[:,1])]
+        rowmin+=[np.amin(inds[:,0])]
+        colmax+=[np.amax(inds[:,1])]
+        rowmax+=[np.amax(inds[:,0])]
 
         deformedimage_corrected[~subset]=0
 
@@ -194,13 +199,13 @@ def polynom_im_correct(d,printing,fn):
         deformedimage_corrected-=im_min
         deformedimage_corrected=255*deformedimage_corrected/(im_max-im_min)
 
-        deformedimage_corrected=deformedimage_corrected[0:row,0:col]
-
-        #grab original image for restacking
-        originalimage=d.ims[:,:,0].astype('float32')
-        originalimage=originalimage[0:row,0:col]
+        #append the deformed image to a list
+        deformedimages+=[deformedimage_corrected]
 
         if printing==1:
+            deformedimage_corrected_toplot=deformedimage_corrected[rowmin[imno]:rowmax[imno],colmin[imno]:colmax[imno]]
+            originalimage=d.ims[:,:,0].astype('float32')
+
             fig,([ax11,ax12,ax13],[ax21,ax22,ax23])=plt.subplots(nrows=2,ncols=3) 
 
             ax11.imshow(subset)
@@ -219,7 +224,7 @@ def polynom_im_correct(d,printing,fn):
             ax21.set_title('deformed_original')
             ax21.axis('off')
 
-            ax22.imshow(deformedimage_corrected,cmap='gray')
+            ax22.imshow(deformedimage_corrected_toplot,cmap='gray')
             ax22.set_title('deformed_corrected')
             ax22.axis('off')
 
@@ -230,12 +235,15 @@ def polynom_im_correct(d,printing,fn):
             plt.tight_layout(pad=0.4, w_pad=0.5, h_pad=0.5)
             plt.show()
 
-        #what are the current dimensions of the stack?
-        stack_rows=imscorrected.shape[0]
-        stack_cols=imscorrected.shape[1]
+        new_rowmin=np.amin(rowmin)
+        new_colmin=np.amin(colmin)
+        new_rowmax=np.amax(rowmax)
+        new_colmax=np.amax(colmax)
 
-        new_rows=np.amin([row,stack_rows])
-        new_cols=np.amin([col,stack_cols])
+    #get the first image to begin the output stack (needs to be row x col x 1)
+    imscorrected=np.expand_dims(d.ims[new_rowmin:new_rowmax,new_colmin:new_colmax,0].astype('float32'),-1)
 
-        imscorrected=np.concatenate((imscorrected[0:new_rows,0:new_cols,:],np.expand_dims(deformedimage_corrected[0:new_rows,0:new_cols],-1)),axis=2)
+    for i in range(0,d.n_ims-1):
+        imscorrected=np.concatenate((imscorrected,np.expand_dims(deformedimages[i][new_rowmin:new_rowmax,new_colmin:new_colmax],-1)),axis=2)
+
     return imscorrected
