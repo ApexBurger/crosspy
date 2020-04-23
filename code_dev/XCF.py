@@ -182,7 +182,7 @@ def freg(ROI_test,ROI_ref,XCF_roisize,XCF_mesh,data_fill,prepared_ffts):
     
     kernc=ne.evaluate('exp(prefac*arg1)')
     kernr=ne.evaluate('exp(prefac*arg2)')
-    kern = ROI_ref*ne.evaluate('exp(ROI_test)')
+    kern = ROI_ref*ne.evaluate('conj(ROI_test)')
     arg3=kernr@kern@kernc
     CC2 = ne.evaluate('conj(arg3)')
 

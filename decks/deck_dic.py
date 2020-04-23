@@ -10,7 +10,7 @@ from crosspy import DIC, Imset
 if __name__=='__main__':
 
     #folder_path = Path(r"C:\Users\tpm416\Documents\GitHub\crosspy\data\Siyang")
-    folder_path=Path(r'D:\DIC\crosspy\data\Siyang')
+    folder_path=Path(r'/Users/tom/Documents/GitHub/crosspy/data/Ben')
     Images = Imset(folder_path,'tif')
 
     # fft filter settings: high pass, high pass width, low pass, low pass width
