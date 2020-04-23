@@ -97,11 +97,12 @@ class DIC:
             self.imageset=images
             self.ims=images.imload(range(0,images.n_ims))
             self.n_ims=images.n_ims
+            self.folder = images.folder
 
         else:
             self.ims=images
             self.n_ims=images.shape[2]
-        self.folder = images.folder
+        
         self.roi=list([roi['size_pass'],roi['overlap_percentage'],roi['xcf_mesh']])
         self.n_rows,self.n_cols,self.ss_locations,self.ss_spacing=gen_ROIs(self.ims.shape[0:2],self.roi)
         self.n_subsets=self.ss_locations.shape[0]
@@ -203,10 +204,19 @@ class DIC:
         self.deformation_gradient = F
         print('... Completed in (s) '+str(time.time()-t0))
 
-    def correct(self):
+    def correct(self,gen_A=None,method='polynomial',printing=0,fn=None):
         print('Correcting images based on DIC results ...')
         t0=time.time()
-        images_corrected=im_correct(self.imageset,self)
+
+        #choose one of affine or polynomial methods
+        if method=='affine':
+            images_corrected=im_correct(self.imageset,self)
+        elif method=='polynomial':
+            images_corrected=polynom_im_correct(self,printing,fn)
+        else:
+            raise Exception('Method not recognised!')
+            
+
         print('... Completed in (s) '+str(time.time()-t0))
         return images_corrected
     

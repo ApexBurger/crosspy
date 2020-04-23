@@ -2,6 +2,8 @@
 import numpy as np
 from scipy.optimize import least_squares
 from scipy import interpolate
+import cv2 as cv
+import matplotlib.pyplot as plt
 
 def im_correct(Images,d):
 
@@ -88,3 +90,152 @@ def rotation_fun(params, x_shift, y_shift, x_pos, y_pos):
     resids = resids.flatten('F')
 
     return resids
+
+def polynom_im_correct(d,printing,fn):
+    #fits a least squares image to plane for a function to generate A (x,y) for Ax=b, with x parameters to fit.
+
+    #get the first image to begin the output stack (needs to be row x col x 1)
+    imscorrected=np.expand_dims(d.ims[:,:,0].astype('float32'),-1)
+
+    if fn==None:
+
+        #create a function to generate the input parameters to the Ax=b mode
+        def gen_A(x,y):
+            A=np.zeros([len(x),6])
+            A[:,0]=np.squeeze(x**2)
+            A[:,1]=np.squeeze(x)
+            A[:,2]=np.squeeze(y**2)
+            A[:,3]=np.squeeze(y)
+            A[:,4]=np.squeeze(x*y)
+            A[:,5]=np.ones(len(x))
+            return A
+
+    else:
+        gen_A=fn
+
+    for imno in range(0,d.n_ims-1):
+
+        #grab displacmenets from a dic pass
+        dxs=np.squeeze(d.dx_maps[:,:,imno])
+        dys=np.squeeze(d.dy_maps[:,:,imno])
+        dims=dxs.shape
+
+        #build grids of x, y
+        xs=(np.linspace(0,dims[1]-1,dims[1])+0.5)*d.ss_spacing
+        ys=(np.linspace(0,dims[0]-1,dims[0])+0.5)*d.ss_spacing
+        xgrid,ygrid=np.meshgrid(xs,ys)
+
+        #get overall co ordinate positions: x + dx, y + dy
+        x_measured=xgrid+dxs
+        y_measured=ygrid+dys
+        #x_measured=dxs
+        #y_measured=dys
+
+        #unravel into 1D
+        x_measured_1d=np.reshape(x_measured,(-1)) #rows
+        y_measured_1d=np.reshape(y_measured,(-1)) #rows
+        x=np.reshape(xgrid,(1,-1)).T #columns
+        y=np.reshape(ygrid,(1,-1)).T #columns
+
+        A=gen_A(x,y)
+
+        #get least squares sol to (quadratic) plane of best fit
+        x_params,_,_,_=np.linalg.lstsq(A,x_measured_1d)
+        y_params,_,_,_=np.linalg.lstsq(A,y_measured_1d)
+
+        #model values of the x, y planes
+        xhat_1d=np.array(A@x_params)
+        yhat_1d=np.array(A@y_params)
+
+        #vectors taking original to LS deformed plane
+        dxhat_1d=xhat_1d-np.squeeze(x)
+        dyhat_1d=yhat_1d-np.squeeze(y)
+
+        #now caculate the x,y positions for the full image with the parameters calculated above
+        deformedimage=d.ims[:,:,imno+1].astype('float32')
+        deformedimage=(deformedimage-np.mean(deformedimage))/np.std(deformedimage)
+
+        dims=np.shape(deformedimage)
+        xs=np.linspace(0,dims[1]-1,dims[1])
+        ys=np.linspace(0,dims[0]-1,dims[0])
+        xgrid,ygrid=np.meshgrid(xs,ys)
+
+        x=np.reshape(xgrid,(1,-1)).T 
+        y=np.reshape(ygrid,(1,-1)).T 
+
+        A_full=gen_A(x,y)
+
+        #model values of the x, y planes for full image
+        xhat_1d=np.array(A_full@x_params)
+        yhat_1d=np.array(A_full@y_params)
+        xhat=np.reshape(xhat_1d,dims).astype('float32')
+        yhat=np.reshape(yhat_1d,dims).astype('float32')
+
+        #dxhat=xhat-xgrid.astype('float32')
+        #dyhat=yhat-ygrid.astype('float32')
+
+        deformedimage_corrected=cv.remap(deformedimage,xhat,yhat,cv.INTER_CUBIC,borderValue=0)
+
+        #%% extract the centres of the corrected and undeformed images
+
+        subset = deformedimage_corrected==0
+        subset = ~subset #return true where we want to keep values
+
+        #get the bottom left corner of the image
+        inds=np.argwhere(subset)
+        colmax_loc=np.argmax(inds[:,1])
+        row,col=inds[colmax_loc,:]
+
+        deformedimage_corrected[~subset]=0
+
+        #remap to 0 - 255 dynamic range
+        im_min=np.amin(deformedimage_corrected)
+        im_max=np.amax(deformedimage_corrected)
+        deformedimage_corrected-=im_min
+        deformedimage_corrected=255*deformedimage_corrected/(im_max-im_min)
+
+        deformedimage_corrected=deformedimage_corrected[0:row,0:col]
+
+        #grab original image for restacking
+        originalimage=d.ims[:,:,0].astype('float32')
+        originalimage=originalimage[0:row,0:col]
+
+        if printing==1:
+            fig,([ax11,ax12,ax13],[ax21,ax22,ax23])=plt.subplots(nrows=2,ncols=3) 
+
+            ax11.imshow(subset)
+            ax11.set_title('remapping')
+            ax11.axis('off')
+
+            ax12.imshow(xhat)
+            ax12.set_title('x-shifts')
+            ax12.axis('off')
+
+            ax13.imshow(yhat)
+            ax13.set_title('y-shifts')
+            ax13.axis('off')
+
+            ax21.imshow(deformedimage,cmap='gray')
+            ax21.set_title('deformed_original')
+            ax21.axis('off')
+
+            ax22.imshow(deformedimage_corrected,cmap='gray')
+            ax22.set_title('deformed_corrected')
+            ax22.axis('off')
+
+            ax23.imshow(originalimage,cmap='gray')
+            ax23.set_title('undeformed')
+            ax23.axis('off')
+
+            plt.tight_layout(pad=0.4, w_pad=0.5, h_pad=0.5)
+            plt.show()
+
+        #what are the current dimensions of the stack?
+        stack_rows=imscorrected.shape[0]
+        stack_cols=imscorrected.shape[1]
+
+        new_rows=np.amin([row,stack_rows])
+        new_cols=np.amin([col,stack_cols])
+
+        imscorrected=np.concatenate((imscorrected[0:new_rows,0:new_cols,:],np.expand_dims(deformedimage_corrected[0:new_rows,0:new_cols],-1)),axis=2)
+    return imscorrected
