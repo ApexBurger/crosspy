@@ -3,7 +3,7 @@ import numpy as np
 from scipy.optimize import least_squares
 from scipy import interpolate
 
-def im_correct(Images,d):
+def im_correct(Images,d, method='map_opencv'):
 
     # Function to translate and rotate images to correct for 
     # rigid body rotation and translation
@@ -14,17 +14,25 @@ def im_correct(Images,d):
     pos_y=d.y_pos
 
     # Load the first image and generate pixel arrays
-    image_ref = Images.imload([0])
+    if type(Images) is np.ndarray:
+        image_ref = Images[:,:,0]
+        images = Images
+    else:
+        image_ref = Images.imload([0])
+        images = Images.imload([])
     x, y = np.meshgrid(range(0,np.size(image_ref,1)),range(0,np.size(image_ref,0)))
-    image_c = np.zeros([np.size(image_ref,0),np.size(image_ref,1),len(Images)])
+    x = x.astype(np.float32)
+    y = y.astype(np.float32)
+    image_c = np.zeros(images.shape)
     image_c[:,:,0] = image_ref
 
-    for i in range(0,len(Images)-1):
+    for i in range(0,images.shape[2]-1):
         # load second image and the shifts of a XCF pass
-        im = Images.imload([i+1])
+        
+        im = images[:,:,i+1]
         x_shifts = shift_x[:, :, i]
         y_shifts = shift_y[:, :, i]
-
+        
         # Correct rigid translation in x and y 
         # by subtracting the mean shift to every coordinate
         x_shifts_new = (x_shifts - np.mean(x_shifts)).flatten('F')
@@ -50,14 +58,39 @@ def im_correct(Images,d):
         # Apply corrections by creating the an array containing the
         # corrected coordinates and then mapping those coordinates
         # to existing pixel grid
-        im_shifts = np.column_stack((x.flatten('F')-np.mean(x_shifts), y.flatten('F')-np.mean(y_shifts)))
-        im_rot = np.dot(np.column_stack((im_shifts[:,0]-xc,im_shifts[:,1]-yc)),rotation)
-        im_correct = np.column_stack((im_rot[:,[0]]+xc, im_rot[:,[1]]+yc))
-        points_corr = [(row[0],row[1]) for row in im_correct]
+        
+        if method == 'map_scipy':
+            # This method is quite slow, somewhat accurate
+            im_shifts = np.column_stack((x.flatten('F')-np.mean(x_shifts), y.flatten('F')-np.mean(y_shifts)))
+            im_rot = np.dot(np.column_stack((im_shifts[:,0]-xc,im_shifts[:,1]-yc)),rotation)
+            im_correct = np.column_stack((im_rot[:,[0]]+xc, im_rot[:,[1]]+yc))
+            points_corr = [(row[0],row[1]) for row in im_correct]
+            image_c[:,:,i+1] = interpolate.griddata(points=points_corr, values=im.flatten('F'), xi=(x,y), method='linear')
+            
+        elif method == 'map_opencv':
+            # This method uses opencv remap - very fast and accurate
+            x_cor, y_cor = x-np.mean(x_shifts), y-np.mean(y_shifts) #shifts
+            points_cor = np.einsum('ji, mni -> jmn', rotation, np.dstack([x-xc, y-yc]))
+            x_map = points_cor[0,:,:]+xc
+            y_map = points_cor[1,:,:]+yc
+            x_map = x_map.astype(np.float32)
+            y_map = y_map.astype(np.float32)
+            image_c[:,:,i+1] = cv2.remap(src=im, map1=x_map, map2=y_map, interpolation=cv2.INTER_CUBIC)
+            
+        elif method == 'affine':
+            # Applies an affine translation and rotation - very fast but can cause blurry images
+            rows,cols = im.shape
+            # Translation
+            x_shift = -np.mean(x_shifts)
+            y_shift = -np.mean(y_shifts)
+            M = np.float32([[1,0,x_shift],[0,1,y_shift]])
+            dst = cv2.warpAffine(im,M,(cols,rows))
+            # Rotation
+            M = cv2.getRotationMatrix2D((xc,yc),np.degrees(theta),1)
+            image_c[:,:,i+1] = cv2.warpAffine(dst,M,(cols,rows))
 
-        # Below interpolates corrected values on grid following surface f(x,y) = z
-        image_c[:,:,1] = interpolate.griddata(points=points_corr, values=im.flatten('F'), xi=(x,y), method='linear')
-       
+    print('Corrections X shift, Y Shift, Rotation:', np.mean(x_shifts), np.mean(y_shifts), np.degrees(theta))
+
     return image_c
 
 def rot_calc(x_shift, y_shift, x_pos, y_pos, params0, ub, lb):

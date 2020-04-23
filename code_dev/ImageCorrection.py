@@ -49,13 +49,35 @@ def im_correct(Images,d):
         yc = params1[1] # Centre y
         theta = params1[2] * np.pi/180 # Rotation theta
         rotation = np.array([[np.cos(theta), -np.sin(theta)],[np.sin(theta), np.cos(theta)]])
-        # Apply corrections by creating the an array containing the
-        # corrected coordinates and then mapping those coordinates
-        # to existing pixel grid
-        im_shifts = np.column_stack((x.flatten('F')-np.mean(x_shifts), y.flatten('F')-np.mean(y_shifts)))
-        im_rot = np.dot(np.column_stack((im_shifts[:,0]-xc,im_shifts[:,1]-yc)),rotation)
-        im_correct = np.column_stack((im_rot[:,[0]]+xc, im_rot[:,[1]]+yc))
-        points_corr = [(row[0],row[1]) for row in im_correct]
+        if method == 'map_scipy':
+            # This method is quite slow, somewhat accurate
+            im_shifts = np.column_stack((x.flatten('F')-np.mean(x_shifts), y.flatten('F')-np.mean(y_shifts)))
+            im_rot = np.dot(np.column_stack((im_shifts[:,0]-xc,im_shifts[:,1]-yc)),rotation)
+            im_correct = np.column_stack((im_rot[:,[0]]+xc, im_rot[:,[1]]+yc))
+            points_corr = [(row[0],row[1]) for row in im_correct]
+            image_c[:,:,i+1] = interpolate.griddata(points=points_corr, values=im.flatten('F'), xi=(x,y), method='linear')
+            
+        elif method == 'map_opencv':
+            # This method uses opencv remap - very fast and accurate
+            x_cor, y_cor = x-np.mean(x_shifts), y-np.mean(y_shifts) #shifts
+            points_cor = np.einsum('ji, mni -> jmn', rotation, np.dstack([x-xc, y-yc]))
+            x_map = points_cor[0,:,:]+xc
+            y_map = points_cor[1,:,:]+yc
+            x_map = x_map.astype(np.float32)
+            y_map = y_map.astype(np.float32)
+            image_c[:,:,i+1] = cv2.remap(src=im, map1=x_map, map2=y_map, interpolation=cv2.INTER_CUBIC)
+            
+        elif method == 'affine':
+            # Applies an affine translation and rotation - very fast but can cause blurry images
+            rows,cols = im.shape
+            # Translation
+            x_shift = -np.mean(x_shifts)
+            y_shift = -np.mean(y_shifts)
+            M = np.float32([[1,0,x_shift],[0,1,y_shift]])
+            dst = cv2.warpAffine(im,M,(cols,rows))
+            # Rotation
+            M = cv2.getRotationMatrix2D((xc,yc),np.degrees(theta),1)
+            image_c[:,:,i+1] = cv2.warpAffine(dst,M,(cols,rows))
 
         # Below interpolates corrected values on grid following surface f(x,y) = z
         image_c[:,:,1] = interpolate.griddata(points=points_corr, values=im.flatten('F'), xi=(x,y), method='linear')
