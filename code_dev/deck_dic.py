@@ -44,10 +44,12 @@ if __name__=='__main__':
     # dic_2ndpass.strain_sequential()
     # print(time.time()-t0)
 
-#%%
-from StrainCalc import *
-dic_2ndpass.calculate_strain()
-dic_2ndpass.plot_strains()
+    #%%
+    from StrainCalc import *
+    dic_2ndpass.calculate_strain()
+    dic_2ndpass.plot_strains()
+
+    
 #%%
 dic_2ndpass.save_data()
 
