@@ -3,16 +3,18 @@ import matplotlib.pyplot as plt
 import multiprocessing
 import functools
 import pyfftw
+from crosspy.XCF import *
+from crosspy.ImagePreparation import *
 import numexpr as ne
 
-import crosspy
+#import crosspy
 
 def subset_compare(d,imnos,subset_n,prepared_ffts):
     #grab the reference and test subsets, and get subpixel registration
-    ref=crosspy.get_subset(d.ims,d.roi[0],d.ss_locations,subset_n,imnos[0])
-    test=crosspy.get_subset(d.ims,d.roi[0],d.ss_locations,subset_n,imnos[1])
+    ref=get_subset(d.ims,d.roi[0],d.ss_locations,subset_n,imnos[0])
+    test=get_subset(d.ims,d.roi[0],d.ss_locations,subset_n,imnos[1])
     #get the displacements
-    dxs,dys,phs=crosspy.fxcorr(ref,test,d,prepared_ffts)
+    dxs,dys,phs=fxcorr(ref,test,d,prepared_ffts)
     #print(str(subset_n))
     return dxs,dys,phs
 
@@ -28,10 +30,10 @@ def subset_compare(d,imnos,subset_n,prepared_ffts):
 #         subset_n=batch[i]
 
 #         #grab the reference and test subsets, and get subpixel registration
-#         ref=crosspy.get_subset(d.ims,d.roi[0],d.ss_locations,subset_n,imnos[0])
-#         test=crosspy.get_subset(d.ims,d.roi[0],d.ss_locations,subset_n,imnos[1])
+#         ref=get_subset(d.ims,d.roi[0],d.ss_locations,subset_n,imnos[0])
+#         test=get_subset(d.ims,d.roi[0],d.ss_locations,subset_n,imnos[1])
 #         #get the displacements
-#         dx,dy,ph=crosspy.fxcorr(ref,test,d,prepared_ffts)
+#         dx,dy,ph=fxcorr(ref,test,d,prepared_ffts)
 
 #         #append these
 #         dx_batch[i]=dx
@@ -92,12 +94,13 @@ def run_DIC(d,imnos=[0,1],cores=None,ffttype='fftw_numpy'):
 
     ne.set_num_threads(ne_threads)
 
+
     #preallocate for this DIC pair
     phs=np.zeros(d.n_subsets)
     dxs=np.zeros(d.n_subsets)
     dys=np.zeros(d.n_subsets)
 
-    prepared_ffts=crosspy.plan_ffts(d,ffttype)
+    prepared_ffts=plan_ffts(d,ffttype)
 
     #decide the number of cores to allocate
     if cores:
@@ -109,7 +112,7 @@ def run_DIC(d,imnos=[0,1],cores=None,ffttype='fftw_numpy'):
     pyfftw.interfaces.cache.enable()        
 
     for subset_n in range(0,d.n_subsets):
-        dxs[subset_n],dys[subset_n],phs[subset_n]=crosspy.subset_compare(d,imnos,subset_n,prepared_ffts)
+        dxs[subset_n],dys[subset_n],phs[subset_n]=subset_compare(d,imnos,subset_n,prepared_ffts)
 
     #translate best_dxs etc back onto image grid
     dx_map=np.reshape(dxs,(d.n_rows,d.n_cols),'F')

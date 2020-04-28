@@ -7,12 +7,13 @@ if __name__=='__main__':
     import os as o
     o.chdir('/Users/tom/Documents/GitHub/crosspy/Code_dev')
     #o.chdir('D:/DIC/crosspy/Code_dev')
-    from Classes import *
-    from ImagePreparation import *
-    from XCF import *
+
     from pathlib import Path
     import time
     import numexpr
+
+    import crosspy
+    
     t0=time.time()
 
     folder_path=Path(r'/Users/tom/Documents/GitHub/crosspy/data/Tom')
