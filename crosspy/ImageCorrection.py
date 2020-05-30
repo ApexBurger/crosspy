@@ -5,7 +5,7 @@ from scipy import interpolate
 import cv2 as cv
 import matplotlib.pyplot as plt
 
-def im_correct(Images,d):
+def im_correct(Images, d, method = "remapping" ):
 
     # Function to translate and rotate images to correct for 
     # rigid body rotation and translation
@@ -48,16 +48,9 @@ def im_correct(Images,d):
         xc = params1[0] # Centre x
         yc = params1[1] # Centre y
         theta = params1[2] * np.pi/180 # Rotation theta
-        rotation = np.array([[np.cos(theta), -np.sin(theta)],[np.sin(theta), np.cos(theta)]])
-        if method == 'map_scipy':
-            # This method is quite slow, somewhat accurate
-            im_shifts = np.column_stack((x.flatten('F')-np.mean(x_shifts), y.flatten('F')-np.mean(y_shifts)))
-            im_rot = np.dot(np.column_stack((im_shifts[:,0]-xc,im_shifts[:,1]-yc)),rotation)
-            im_correct = np.column_stack((im_rot[:,[0]]+xc, im_rot[:,[1]]+yc))
-            points_corr = [(row[0],row[1]) for row in im_correct]
-            image_c[:,:,i+1] = interpolate.griddata(points=points_corr, values=im.flatten('F'), xi=(x,y), method='linear')
-            
-        elif method == 'map_opencv':
+        rotation = np.array([[np.cos(theta), -np.sin(theta)],[np.sin(theta), np.cos(theta)]])     
+
+        if method == 'remapping':
             # This method uses opencv remap - very fast and accurate
             x_cor, y_cor = x-np.mean(x_shifts), y-np.mean(y_shifts) #shifts
             points_cor = np.einsum('ji, mni -> jmn', rotation, np.dstack([x-xc, y-yc]))

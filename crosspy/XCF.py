@@ -197,7 +197,11 @@ def freg(ROI_test,ROI_ref,XCF_roisize,XCF_mesh,data_fill,prepared_ffts):
     row_shift=row_shift+rloc/XCF_mesh
     col_shift=col_shift+cloc/XCF_mesh
 
-    return col_shift, row_shift, CCmax
+    bf1=np.sum(ROI_test.flatten()*np.conjugate(ROI_test.flatten()))
+    bf2=np.sum(ROI_ref.flatten()*np.conjugate(ROI_ref.flatten()))
+
+    return col_shift, row_shift, CCmax/np.sqrt(float(bf1*bf2))
+
 
 def fxcorr(subset1,subset2,d,prepared_ffts):
 
@@ -210,8 +214,10 @@ def fxcorr(subset1,subset2,d,prepared_ffts):
     filters_settings=d.filter_settings
 
     #h-filter the subsets and generate the fft filter
+    hfil = 1.
     subset1_filt=hfil*subset1
     subset2_filt=hfil*subset2
+    
 
     #FFT the subsets
     f_s1=forward_fft(subset1_filt)

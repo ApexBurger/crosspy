@@ -90,9 +90,9 @@ def run_DIC(d,imnos=[0,1],cores=None,ffttype='fftw_numpy'):
 
     #set up numexpr to run with the chosen number of threads
     if cores==None:
-        ne_threads=multiprocessing.cpu_count()
+        cores=multiprocessing.cpu_count()
 
-    ne.set_num_threads(ne_threads)
+    ne.set_num_threads(cores)
 
 
     #preallocate for this DIC pair
