@@ -197,10 +197,10 @@ def freg(ROI_test,ROI_ref,XCF_roisize,XCF_mesh,data_fill,prepared_ffts):
     row_shift=row_shift+rloc/XCF_mesh
     col_shift=col_shift+cloc/XCF_mesh
 
-    bf1=np.sum(ROI_test.flatten()*np.conjugate(ROI_test.flatten()))
-    bf2=np.sum(ROI_ref.flatten()*np.conjugate(ROI_ref.flatten()))
+    #bf1=np.sum(ROI_test.flatten()*np.conjugate(ROI_test.flatten()))
+    #bf2=np.sum(ROI_ref.flatten()*np.conjugate(ROI_ref.flatten()))
 
-    return col_shift, row_shift, CCmax/np.sqrt(float(bf1*bf2))
+    return col_shift, row_shift, CCmax#/np.sqrt(float(bf1*bf2))
 
 
 def fxcorr(subset1,subset2,d,prepared_ffts):
