@@ -106,7 +106,7 @@ class DIC:
         self.x_pos = self.ss_locations[:,0].reshape(self.n_rows,self.n_cols)+roi['size_pass']/2
         self.y_pos = self.ss_locations[:,1].reshape(self.n_rows,self.n_cols)+roi['size_pass']/2
 
-    def run_sequential(self,cores=None,ffttype='fftw_numpy'):
+    def run_sequential(self,cores=None,ffttype='fftw_numpy', discontinuity=False):
         #Perform DIC on consecutive images, using the previous as a reference.
         #if cores=None looks for maximum for your system.
         #fft type can be: 'fftw_numpy' (default), 'fftw_scipy', or anything else gives numpy
@@ -119,9 +119,20 @@ class DIC:
         suffix=' ...'
         t0=time.time()
 
-        for i in range(0,self.n_ims-1):
-            print('Running sequential DIC on image pair ' +str(i+1)+' of '+str(self.n_ims-1)+suffix)
-            dx_maps[:,:,i],dy_maps[:,:,i],ph_maps[:,:,i]=crosspy.run_DIC(self,[i,i+1],cores)
+        if discontinuity == True:
+            rd_maps = np.zeros((self.n_rows,self.n_cols,self.n_ims-1))
+            th_maps = np.zeros((self.n_rows,self.n_cols,self.n_ims-1))
+            hs_maps = np.zeros((self.n_rows,self.n_cols,self.n_ims-1))
+            for i in range(0,self.n_ims-1):
+                print('Running sequential DIC on image pair ' +str(i+1)+' of '+str(self.n_ims-1)+suffix)
+                dx_maps[:,:,i],dy_maps[:,:,i],ph_maps[:,:,i],rd_maps[:,:,i],th_maps[:,:,i],hs_maps[:,:,i]=crosspy.run_DIC(self, [i,i+1],cores, discontinuity=True)
+            self.rd_maps = rd_maps
+            self.th_maps = th_maps
+            self.hs_maps = hs_maps
+        else:
+            for i in range(0,self.n_ims-1):
+                print('Running sequential DIC on image pair ' +str(i+1)+' of '+str(self.n_ims-1)+suffix)
+                dx_maps[:,:,i],dy_maps[:,:,i],ph_maps[:,:,i]=crosspy.run_DIC(self,[i,i+1],cores)
 
         self.ph_maps=ph_maps
         self.dx_maps=dx_maps
@@ -130,7 +141,7 @@ class DIC:
 
         #return dx_maps, dy_maps, ph_maps
 
-    def run_cumulative(self,cores=None,ffttype='fftw_numpy'):
+    def run_cumulative(self,cores=None,ffttype='fftw_numpy', discontinuity=False):
         #Perform DIC on sequential images, using the first as a reference.
         #if cores=None looks for maximum for your system.
         #fft type can be: 'fftw_numpy' (default), 'fftw_scipy', or anything else gives numpy
@@ -143,9 +154,20 @@ class DIC:
         suffix=' ...'
         t0=time.time()
 
-        for i in range(0,self.n_ims):
-            print('Running cumulative DIC on image pair ' +str(i+1)+' of '+str(self.n_ims-1)+suffix)
-            dx_maps[:,:,i],dy_maps[:,:,i],ph_maps[:,:,i]=crosspy.run_DIC(self,[0,i+1],cores)
+        if discontinuity == True:
+            rd_maps = np.zeros((self.n_rows,self.n_cols,self.n_ims-1))
+            th_maps = np.zeros((self.n_rows,self.n_cols,self.n_ims-1))
+            hs_maps = np.zeros((self.n_rows,self.n_cols,self.n_ims-1))
+            for i in range(0,self.n_ims-1):
+                print('Running cumulative DIC on image pair ' +str(i+1)+' of '+str(self.n_ims-1)+suffix)
+                dx_maps[:,:,i],dy_maps[:,:,i],ph_maps[:,:,i],rd_maps[:,:,i],th_maps[:,:i],hs_maps[:,:,i]=crosspy.run_DIC(self, [0,i+1],cores, discontinuity=True)
+            self.rd_maps = rd_maps
+            self.th_maps = th_maps
+            self.hs_maps = hs_maps
+        else:
+            for i in range(0,self.n_ims):
+                print('Running cumulative DIC on image pair ' +str(i+1)+' of '+str(self.n_ims-1)+suffix)
+                dx_maps[:,:,i],dy_maps[:,:,i],ph_maps[:,:,i]=crosspy.run_DIC(self,[0,i+1],cores)
 
         self.ph_maps=ph_maps
         self.dx_maps=dx_maps
@@ -157,17 +179,34 @@ class DIC:
 
         if self.ph_maps.any()==False:
             raise Exception('No DIC results to plot!')
-
-        for i in range(0,self.n_ims-1):
-            fig,(ax11,ax12,ax13)=plt.subplots(1,3,figsize=(10,10)) 
-            ax11.imshow(self.dx_maps[:,:,i],cmap=colmap)
-            ax11.set_title('X-displacements, map '+str(i+1))
-            ax12.imshow(self.dy_maps[:,:,i],cmap=colmap)
-            ax12.set_title('Y-displacements, map '+str(i+1))
-            ax13.imshow(self.ph_maps[:,:,i],cmap=colmap)
-            ax13.set_title('CC peak heights, map '+str(i+1))
-            
-            plt.show()
+        if hasattr(self, "rd_maps") == False:
+            for i in range(0,self.n_ims-1):
+                fig,(ax11,ax12,ax13)=plt.subplots(1,3,figsize=(10,10)) 
+                ax11.imshow(self.dx_maps[:,:,i],cmap=colmap)
+                ax11.set_title('X-displacements, map '+str(i+1))
+                ax12.imshow(self.dy_maps[:,:,i],cmap=colmap)
+                ax12.set_title('Y-displacements, map '+str(i+1))
+                ax13.imshow(self.ph_maps[:,:,i],cmap=colmap)
+                ax13.set_title('CC peak heights, map '+str(i+1))
+                
+                plt.show()
+        else:
+            for i in range(0,self.n_ims-1):
+                fig,((ax11,ax12,ax13),(ax21,ax22,ax23))=plt.subplots(2,3,figsize=(10,10)) 
+                ax11.imshow(self.dx_maps[:,:,i],cmap=colmap)
+                ax11.set_title('X-displacements, map '+str(i+1))
+                ax12.imshow(self.dy_maps[:,:,i],cmap=colmap)
+                ax12.set_title('Y-displacements, map '+str(i+1))
+                ax13.imshow(self.ph_maps[:,:,i],cmap=colmap)
+                ax13.set_title('CC peak heights, map '+str(i+1))
+                ax21.imshow(self.rd_maps[:,:,i],cmap=colmap)
+                ax21.set_title('R , map '+str(i+1))
+                ax22.imshow(self.th_maps[:,:,i],cmap=colmap)
+                ax22.set_title('Theta , map '+str(i+1))
+                ax23.imshow(self.hs_maps[:,:,i],cmap=colmap)
+                ax23.set_title('Heavisided, map '+str(i+1))
+                
+                plt.show()
 
     def calculate_strain(self, strain_method='l2'):
         if self.dx_maps.any()==False:

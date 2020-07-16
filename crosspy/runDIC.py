@@ -5,18 +5,24 @@ import functools
 import pyfftw
 from crosspy.XCF import *
 from crosspy.ImagePreparation import *
+from crosspy.hs import *
 import numexpr as ne
 
 #import crosspy
 
-def subset_compare(d,imnos,subset_n,prepared_ffts):
+def subset_compare(d,imnos,subset_n,prepared_ffts,discontinuity=False):
     #grab the reference and test subsets, and get subpixel registration
     ref=get_subset(d.ims,d.roi[0],d.ss_locations,subset_n,imnos[0])
     test=get_subset(d.ims,d.roi[0],d.ss_locations,subset_n,imnos[1])
-    #get the displacements
-    dxs,dys,phs=fxcorr(ref,test,d,prepared_ffts)
-    #print(str(subset_n))
-    return dxs,dys,phs
+    #get the displacements 
+    if discontinuity == True:
+        subsets = np.stack((ref,test),axis=2)
+        dxs, dys, phs,r,theta, hson = minimise_rt_lstsq(subsets,d, prepared_ffts)
+        return dxs,dys,phs,r,theta,hson
+    else:
+        dxs,dys,phs=fxcorr(ref,test,d,prepared_ffts)
+        return dxs,dys,phs
+
 
 
 # def subset_compare_batch(d,imnos,batch):
@@ -85,10 +91,12 @@ def subset_compare(d,imnos,subset_n,prepared_ffts):
 #     return dxs,dys,phs
     
 
-def run_DIC(d,imnos=[0,1],cores=None,ffttype='fftw_numpy'):
+def run_DIC(d,imnos=[0,1], cores=None,ffttype='fftw_numpy', discontinuity=False):
     #fft type can be : fftw_numpy (default), fftw_scipy, else defaults to numpy
 
     #set up numexpr to run with the chosen number of threads
+    
+    #discontinuity enables or disables slip trace tracking via heaviside filtering
     if cores==None:
         cores=multiprocessing.cpu_count()
 
@@ -109,14 +117,31 @@ def run_DIC(d,imnos=[0,1],cores=None,ffttype='fftw_numpy'):
         pyfftw.config.NUM_THREADS = multiprocessing.cpu_count()
 
     #enable the pyfftw cache for speedup
-    pyfftw.interfaces.cache.enable()        
+    pyfftw.interfaces.cache.enable()   
+    
+    #check for discontinuity tracker
+    if discontinuity == True:
+        r = np.zeros(d.n_subsets)
+        theta = np.zeros(d.n_subsets)
+        hson = np.zeros(d.n_subsets)
+        for subset_n in range(0,d.n_subsets):
+            dxs[subset_n],dys[subset_n],phs[subset_n],r[subset_n],theta[subset_n],hson[subset_n]=subset_compare(d,imnos,subset_n,prepared_ffts,discontinuity=True)
+        
+        dx_map=np.reshape(dxs,(d.n_rows,d.n_cols),'F')
+        dy_map=np.reshape(dys,(d.n_rows,d.n_cols),'F')
+        ph_map=np.reshape(phs,(d.n_rows,d.n_cols),'F')
+        r_map = np.reshape(r,(d.n_rows,d.n_cols),'F')
+        theta_map = np.reshape(theta,(d.n_rows,d.n_cols),'F')
+        hson_map = np.reshape(hson,(d.n_rows,d.n_cols),'F')
+        
+        return dx_map, dy_map, ph_map, r_map, theta_map, hson_map
+    else:
+        for subset_n in range(0,d.n_subsets):
+            dxs[subset_n],dys[subset_n],phs[subset_n]=subset_compare(d,imnos,subset_n,prepared_ffts)
 
-    for subset_n in range(0,d.n_subsets):
-        dxs[subset_n],dys[subset_n],phs[subset_n]=subset_compare(d,imnos,subset_n,prepared_ffts)
+        #translate best_dxs etc back onto image grid
+        dx_map=np.reshape(dxs,(d.n_rows,d.n_cols),'F')
+        dy_map=np.reshape(dys,(d.n_rows,d.n_cols),'F')
+        ph_map=np.reshape(phs,(d.n_rows,d.n_cols),'F')
 
-    #translate best_dxs etc back onto image grid
-    dx_map=np.reshape(dxs,(d.n_rows,d.n_cols),'F')
-    dy_map=np.reshape(dys,(d.n_rows,d.n_cols),'F')
-    ph_map=np.reshape(phs,(d.n_rows,d.n_cols),'F')
-
-    return dx_map,dy_map,ph_map
+        return dx_map,dy_map,ph_map
