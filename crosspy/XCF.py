@@ -5,13 +5,12 @@ import numpy.fft
 import multiprocessing
 import pyfftw 
 import numexpr as ne
-
-import crosspy
+from crosspy.ImagePreparation import get_subset
+from crosspy.hs import *
 
 def plan_ffts(d,ffttype='fftw_numpy'):
     
     subset_shape=d.roi[0]
-    #xcf_mesh=
 
     a = pyfftw.empty_aligned((subset_shape, subset_shape), dtype='complex128')
     b = pyfftw.empty_aligned((subset_shape, subset_shape), dtype='complex128')
@@ -202,7 +201,6 @@ def freg(ROI_test,ROI_ref,XCF_roisize,XCF_mesh,data_fill,prepared_ffts):
 
     return col_shift, row_shift, CCmax#/np.sqrt(float(bf1*bf2))
 
-
 def fxcorr(subset1,subset2,d,prepared_ffts):
 
     forward_fft=prepared_ffts[0]
@@ -214,7 +212,7 @@ def fxcorr(subset1,subset2,d,prepared_ffts):
     filters_settings=d.filter_settings
 
     #h-filter the subsets and generate the fft filter
-    hfil = 1.
+    hfil = 1. # THIS IS AN ATTEMPT TO REMOVE H FILTER FOR HEAVISIDE
     subset1_filt=hfil*subset1
     subset2_filt=hfil*subset2
     
@@ -245,3 +243,4 @@ def fxcorr(subset1,subset2,d,prepared_ffts):
 
     col_shift, row_shift, CCmax = freg(ROI_test,ROI_ref,roi[0],roi[2],data_fill,prepared_ffts)
     return col_shift, row_shift, CCmax
+

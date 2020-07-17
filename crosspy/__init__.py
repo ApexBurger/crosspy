@@ -6,4 +6,5 @@ from crosspy.runDIC import *
 from crosspy.StrainCalc import *
 from crosspy.XCF import *
 from crosspy.plotting import *
-from crosspy.discon import *
+from crosspy.hs import *
+from crosspy.subset_compare import *

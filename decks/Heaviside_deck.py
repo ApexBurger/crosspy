@@ -3,8 +3,12 @@
 load_ext autoreload
 %autoreload 2
 
-#%%
-if __name__=='__main__':
+
+# %%
+
+# %%
+
+if __name__ == "__main__":
     import os as o
 
     from pathlib import Path
@@ -15,18 +19,18 @@ if __name__=='__main__':
     
     t0=time.time()
 
-    folder_path=Path(r'/Users/alexanderbergsmo/Desktop/DIC/crosspy/data/Subset_tester')
+    folder_path=Path(r'D:\DIC\crosspy\data\Subset_tester')
     Images = xpy.Imset(folder_path,'tif',[0,1])
 
     # # fft filter settings: high pass, high pass width, low pass, low pass width
     filter_settings=[4,2,15,8]
-    roi_1stpass = dict(size_pass = 50, overlap_percentage = 80, xcf_mesh=250)
+    roi_1stpass = dict(size_pass = 50, overlap_percentage = 75, xcf_mesh=250)
 
     # # build the dic class (but don't run it yet):
     dic_1stpass=xpy.DIC(Images[0,1],roi_1stpass,filter_settings)
 
     # # run the dic on specified images within the stack, and get displacements:
-    dic_1stpass.run_sequential()
+    dic_1stpass.run_sequential(cores=4)
     dic_1stpass.plot_displacements()
 
     # # correct the images and instantiate a new DIC class
@@ -36,7 +40,7 @@ if __name__=='__main__':
     dic_2ndpass = xpy.DIC(corrected_images,roi_2ndpass,filter_settings,savingfolder=dic_1stpass.folder)
 
     # # run the second pass
-    dic_2ndpass.run_sequential(discontinuity=True)
+    dic_2ndpass.run_sequential(cores=4, hs=True)
     dic_2ndpass.plot_displacements()
 
     dic_2ndpass.calculate_strain()

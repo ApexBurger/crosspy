@@ -1,0 +1,16 @@
+         40554277 function calls (39306756 primitive calls) in 724.919 seconds
+
+   Ordered by: cumulative time
+   List reduced from 3403 to 10 due to restriction <10>
+
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+        1    0.000    0.000  725.043  725.043 {built-in method builtins.exec}
+        1    0.000    0.000  725.043  725.043 <string>:3(<module>)
+        1    0.000    0.000  723.521  723.521 Classes.py:109(run_sequential)
+        1    0.021    0.021  723.520  723.520 runDIC.py:94(run_DIC)
+     2500    0.031    0.000  723.498    0.289 runDIC.py:13(subset_compare)
+     2500    0.093    0.000  722.649    0.289 hs.py:285(minimise_rt_lstsq)
+    76098    5.843    0.000  699.760    0.009 hs.py:131(hs_corr)
+     2500    0.030    0.000  693.095    0.277 hs.py:280(least_squares_fit)
+    78598   38.012    0.000  601.042    0.008 XCF.py:206(fxcorr)
+    78598  122.270    0.002  547.907    0.007 XCF.py:99(freg)

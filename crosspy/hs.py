@@ -4,14 +4,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 from pathlib import Path
 from crosspy import DIC, Imset
-from crosspy.XCF import *
+from crosspy.XCF import fxcorr
 import os
 import cv2
-from numba import double, jit
-from numba import int32, float32, uint8, jitclass
-import numpy as np
-
- 
+from numba import double, jit, int32, float32, uint8, jitclass
 
 @jitclass([
     ('x', float32),
@@ -228,23 +224,12 @@ def peak_angle(resolution, subsets, d, prepared_ffts):
 
     fx_mod = x[0]*theta_mod**2 + x[1] * theta_mod + x[2]
 
-    # plot for the sake of it
-
-    # fig, ax = plt.subplots()
-
-    # ax.plot(theta, fx_measured, theta_mod, fx_mod)
-
-    # plt.show()
-
     fx_measured.max()
 
     loc = np.where(fx_measured.max() == fx_measured)
     theta_sol = theta[loc]
-    
-    if len(theta_sol) > 1:
-        theta_sol = 0
 
-    return theta_sol
+    return float(theta_sol[0])
 
 def peak_r(theta, resolution, subsets, d, prepared_ffts):
 
@@ -256,7 +241,7 @@ def peak_r(theta, resolution, subsets, d, prepared_ffts):
     
 
     # create search space in r
-    r_max = subsets.shape[2]/2
+    r_max = subsets.shape[1]/3
     r = np.linspace(0,r_max,resolution)
 
     c = np.column_stack((r,theta))
@@ -283,20 +268,10 @@ def peak_r(theta, resolution, subsets, d, prepared_ffts):
     r_mod = np.linspace(0,r_max,1000)
     fx_m = x[0]*r_mod**2 + x[1]*r_mod + x[2]
 
-    # plot for fun
-
-    # fig, ax = plt.subplots()
-
-    # ax.plot(r,fx, rm, fx_m)
-
-    # plt.show()
-
-    # find peak
-
-    loc = np.where(fx_m.max() == fx_m)
+    loc = np.where(fx.max() == fx)
     r_sol = r_mod[loc]
 
-    return r_sol, np.mean(fx_m), np.max(fx_m) 
+    return float(r_sol[0]), np.mean(fx_m), np.max(fx_m) 
 
 def least_squares_fit(res, subsets, d,prepared_ffts):
     theta = peak_angle(res, subsets, d, prepared_ffts)
@@ -309,7 +284,7 @@ def minimise_rt_lstsq(subsets, d, prepared_ffts):
         dx,dy,c=hs_corr(x,subsets,d,prepared_ffts)
         return dx, dy, c
 
-    r, theta, xcf_mean, xcf_peak = least_squares_fit(20, subsets, d, prepared_ffts)
+    r, theta, xcf_mean, xcf_peak = least_squares_fit(15, subsets, d, prepared_ffts)
 
     dx, dy, cc = fxcorr(subsets[:,:,0], subsets[:,:,1], d, prepared_ffts)
     cc = cc/np.sqrt(subsets.shape[0]**2)
