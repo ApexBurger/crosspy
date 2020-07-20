@@ -29,7 +29,7 @@ def run_DIC(d,imnos=[0,1],hs=False, cores=None,ffttype='fftw_numpy'):
     pyfftw.interfaces.cache.enable()   
     
     # start mp pool
-
+    
     #check for discontinuity tracker
     if hs == True:
         r = np.zeros(d.n_subsets)

@@ -124,7 +124,7 @@ class DIC:
             th_maps = np.zeros((self.n_rows,self.n_cols,self.n_ims-1))
             hs_maps = np.zeros((self.n_rows,self.n_cols,self.n_ims-1))
             for i in range(0,self.n_ims-1):
-                print('Running sequential DIC on image pair ' +str(i+1)+' of '+str(self.n_ims-1)+suffix)
+                print('Running sequential DIC on image pair ' +str(i+1)+' of '+str(self.n_ims-1)+suffix +', total subsets per image: ' + str(self.n_subsets))
                 dx_maps[:,:,i],dy_maps[:,:,i],ph_maps[:,:,i],rd_maps[:,:,i],th_maps[:,:,i],hs_maps[:,:,i]=crosspy.run_DIC(d=self, imnos=[i,i+1],cores=cores, hs=True)
             self.rd_maps = rd_maps
             self.th_maps = th_maps

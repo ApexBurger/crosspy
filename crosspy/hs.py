@@ -202,40 +202,46 @@ def peak_angle(resolution, subsets, d, prepared_ffts):
     theta = np.linspace(0, 360, resolution)
     r = np.full(len(theta), subsets.shape[0]/4)
 
-    def A_mat(x):
-        A = np.zeros((len(x),6))
-        A[:,0]=np.squeeze(x**2)
-        A[:,1]=np.squeeze(x)
-        A[:,2]=np.ones(len(x))
-        return A
+    # def A_mat(x):
+    #     A = np.zeros((len(x),6))
+    #     A[:,0]=np.squeeze(x**2)
+    #     A[:,1]=np.squeeze(x)
+    #     A[:,2]=np.ones(len(x))
+    #     return A
     # generate trial Ax=b based on measured response
-    atr = A_mat(theta)
+    #atr = A_mat(theta)
     vals = np.c_[r,theta]
 
     # here we measure XCF
     btr = np.array([hsin(val, subsets, d, prepared_ffts) for val in vals])
     fx_measured = btr
-    # x params
 
-    x, _, _, _ = np.linalg.lstsq(atr, btr)
+    # # x params
 
-    # model
-    theta_mod = np.linspace(0, 360, 1000)
+    # x, _, _, _ = np.linalg.lstsq(atr, btr)
 
-    fx_mod = x[0]*theta_mod**2 + x[1] * theta_mod + x[2]
+    # # model
+    # theta_mod = np.linspace(0, 360, 1000)
 
-    fx_measured.max()
+    # fx_mod = x[0]*theta_mod**2 + x[1] * theta_mod + x[2]
 
-    loc = np.where(fx_measured.max() == fx_measured)
-    theta_sol = theta[loc]
+    if np.isnan(fx_measured).any():
+        return np.nan
+    else:
+        loc = np.where(fx_measured.max() == fx_measured)
+        theta_sol = theta[loc]
 
-    return float(theta_sol[0])
+        return float(theta_sol[0])
 
 def peak_r(theta, resolution, subsets, d, prepared_ffts):
 
     def hsin(x,subsets,d,prepared_ffts):
         _,_,c=hs_corr(x,subsets,d,prepared_ffts)
         return c
+
+    if np.isnan(theta):
+        return np.nan, 0
+
     # angle space
     theta = np.full((resolution),theta)
     
@@ -246,37 +252,60 @@ def peak_r(theta, resolution, subsets, d, prepared_ffts):
 
     c = np.column_stack((r,theta))
 
+
+
     # search
     fx = np.array([hsin(val,subsets, d, prepared_ffts) for val in c])
-
     # create model
 
-    def A_mat(x):
-        A = np.zeros((len(x),6))
-        A[:,0]=np.squeeze(x**2)
-        A[:,1]=np.squeeze(x)
-        A[:,2]=np.ones(len(x))
-        return A
+    # def A_mat(x):
+    #     A = np.zeros((len(x),6))
+    #     A[:,0]=np.squeeze(x**2)
+    #     A[:,1]=np.squeeze(x)
+    #     A[:,2]=np.ones(len(x))
+    #     return A
 
     # Ax = b
 
-    A = A_mat(c[:,0])
-    x, _, _, _ = np.linalg.lstsq(A,fx)
+    # A = A_mat(c[:,0])
+    # x, _, _, _ = np.linalg.lstsq(A,fx)
   
     # model
 
-    r_mod = np.linspace(0,r_max,1000)
-    fx_m = x[0]*r_mod**2 + x[1]*r_mod + x[2]
+    # r_mod = np.linspace(0,r_max,1000)
+    # fx_m = x[0]*r_mod**2 + x[1]*r_mod + x[2]
 
-    loc = np.where(fx.max() == fx)
-    r_sol = r_mod[loc]
 
-    return float(r_sol[0]), np.mean(fx_m), np.max(fx_m) 
+    if np.isnan(fx).any():
+        return np.nan
+    else:
+        # create model
+
+        def A_mat(x):
+            A = np.zeros((len(x),6))
+            A[:,0]=np.squeeze(x**2)
+            A[:,1]=np.squeeze(x)
+            A[:,2]=np.ones(len(x))
+            return A
+
+        #Ax = b
+
+        A = A_mat(c[:,0])
+        x, _, _, _ = np.linalg.lstsq(A,fx)
+    
+        # model
+
+        r_mod = np.linspace(0,r_max,1000)
+        fx_m = x[0]*r_mod**2 + x[1]*r_mod + x[2]
+        loc = np.where(fx.max() == fx)
+        r_sol = r[loc]
+
+        return float(r_sol[0]), np.max(fx) 
 
 def least_squares_fit(res, subsets, d,prepared_ffts):
     theta = peak_angle(res, subsets, d, prepared_ffts)
-    r, xcf_mean, xcf_peak = peak_r(theta, res, subsets, d, prepared_ffts)
-    return r, theta, xcf_mean, xcf_peak
+    r, xcf_peak = peak_r(theta, res, subsets, d, prepared_ffts)
+    return r, theta, xcf_peak
 
 def minimise_rt_lstsq(subsets, d, prepared_ffts):
 
@@ -284,13 +313,13 @@ def minimise_rt_lstsq(subsets, d, prepared_ffts):
         dx,dy,c=hs_corr(x,subsets,d,prepared_ffts)
         return dx, dy, c
 
-    r, theta, xcf_mean, xcf_peak = least_squares_fit(15, subsets, d, prepared_ffts)
+    r, theta, xcf_peak  = least_squares_fit(15, subsets, d, prepared_ffts)
 
     dx, dy, cc = fxcorr(subsets[:,:,0], subsets[:,:,1], d, prepared_ffts)
     cc = cc/np.sqrt(subsets.shape[0]**2)
-    if xcf_peak > cc:
+    if xcf_peak > cc and r != np.nan and theta != np.nan:
         x = np.array([float(r), float(theta)])
         dx,dy,cc = hsin(x, subsets, d, prepared_ffts)
-        return dx,dy,cc,r,theta,True
+        return dx,dy,cc,r,theta,1.0
     else:
-        return dx,dy,cc,False,False,False
+        return dx,dy,cc,False,False,0.0
