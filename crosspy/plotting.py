@@ -15,8 +15,8 @@ def plot_4(d, num, cmap):
     no = 0
     for i in range(Nr):
         for j in range(Nc):
-            vmin = np.mean(data[no].flatten()) - 2*np.std(data[no].flatten())
-            vmax = np.mean(data[no].flatten()) + 2*np.std(data[no].flatten())
+            vmin = np.median(data[no].flatten()) - 2*np.std(data[no].flatten())
+            vmax = np.median(data[no].flatten()) + 2*np.std(data[no].flatten())
             images.append(axs[i, j].imshow(data[no], cmap=cmap, vmin=vmin, vmax=vmax))
             axs[i, j].set_title(names[no])
             axs[i, j].label_outer()
