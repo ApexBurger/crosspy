@@ -13,18 +13,19 @@ if __name__ == "__main__":
 
     from pathlib import Path
     import time
-    import numexpr
 
     import crosspy as xpy
     
     t0=time.time()
 
-    folder_path=Path(r'D:\DIC\crosspy\data\Subset_tester')
+    folder_path=Path(r'D:\DIC\crosspy\data\Phantom')
     Images = xpy.Imset(folder_path,'tif',[0,1])
+
+    ss_size_final = 70
 
     # # fft filter settings: high pass, high pass width, low pass, low pass width
     filter_settings=[4,2,15,8]
-    roi_1stpass = dict(size_pass = 50, overlap_percentage = 75, xcf_mesh=250)
+    roi_1stpass = dict(size_pass = ss_size_final*2, overlap_percentage = 80, xcf_mesh=ss_size_final*2)
 
     # # build the dic class (but don't run it yet):
     dic_1stpass=xpy.DIC(Images[0,1],roi_1stpass,filter_settings)
@@ -36,8 +37,8 @@ if __name__ == "__main__":
     # # correct the images and instantiate a new DIC class
     corrected_images=dic_1stpass.correct(method='polynomial',printing=1)
 
-    roi_2ndpass = dict(size_pass = 50, overlap_percentage = 90, xcf_mesh=250)
-    dic_2ndpass = xpy.DIC(corrected_images,roi_2ndpass,filter_settings,savingfolder=dic_1stpass.folder)
+    roi_2ndpass = dict(size_pass = ss_size_final, overlap_percentage = 80, xcf_mesh=ss_size_final)
+    dic_2ndpass = xpy.DIC(corrected_images,roi_2ndpass,filter_settings)
 
     # # run the second pass
     dic_2ndpass.run_sequential(cores=4, hs=True)
@@ -48,5 +49,13 @@ if __name__ == "__main__":
 
     dic_2ndpass.save_data()
 
+
+# %%
+
+print(dic_2ndpass.hs_maps[:,:,0])
+
+import matplotlib.pyplot as plt 
+
+plt.hist(dic_2ndpass.th_maps[:,:,0])
 
 # %%

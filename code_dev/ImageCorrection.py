@@ -5,7 +5,7 @@ from scipy import interpolate
 import cv2 as cv
 import matplotlib.pyplot as plt
 
-def im_correct(Images,d):
+def im_correct(d,printing):
 
     # Function to translate and rotate images to correct for 
     # rigid body rotation and translation
@@ -16,14 +16,14 @@ def im_correct(Images,d):
     pos_y=d.y_pos
 
     # Load the first image and generate pixel arrays
-    image_ref = Images.imload([0])
+    image_ref = d.imload([0])
     x, y = np.meshgrid(range(0,np.size(image_ref,1)),range(0,np.size(image_ref,0)))
     image_c = np.zeros([np.size(image_ref,0),np.size(image_ref,1),len(Images)])
     image_c[:,:,0] = image_ref
 
-    for i in range(0,len(Images)-1):
+    for i in range(0,image_c.shape[2]):
         # load second image and the shifts of a XCF pass
-        im = Images.imload([i+1])
+        im = d.imload([i+1])
         x_shifts = shift_x[:, :, i]
         y_shifts = shift_y[:, :, i]
 
@@ -49,39 +49,72 @@ def im_correct(Images,d):
         yc = params1[1] # Centre y
         theta = params1[2] * np.pi/180 # Rotation theta
         rotation = np.array([[np.cos(theta), -np.sin(theta)],[np.sin(theta), np.cos(theta)]])
-        if method == 'map_scipy':
-            # This method is quite slow, somewhat accurate
-            im_shifts = np.column_stack((x.flatten('F')-np.mean(x_shifts), y.flatten('F')-np.mean(y_shifts)))
-            im_rot = np.dot(np.column_stack((im_shifts[:,0]-xc,im_shifts[:,1]-yc)),rotation)
-            im_correct = np.column_stack((im_rot[:,[0]]+xc, im_rot[:,[1]]+yc))
-            points_corr = [(row[0],row[1]) for row in im_correct]
-            image_c[:,:,i+1] = interpolate.griddata(points=points_corr, values=im.flatten('F'), xi=(x,y), method='linear')
-            
-        elif method == 'map_opencv':
-            # This method uses opencv remap - very fast and accurate
-            x_cor, y_cor = x-np.mean(x_shifts), y-np.mean(y_shifts) #shifts
-            points_cor = np.einsum('ji, mni -> jmn', rotation, np.dstack([x-xc, y-yc]))
-            x_map = points_cor[0,:,:]+xc
-            y_map = points_cor[1,:,:]+yc
-            x_map = x_map.astype(np.float32)
-            y_map = y_map.astype(np.float32)
-            image_c[:,:,i+1] = cv.remap(src=im, map1=x_map, map2=y_map, interpolation=cv.INTER_CUBIC)
-            
-        elif method == 'affine':
-            # Applies an affine translation and rotation - very fast but can cause blurry images
-            rows,cols = im.shape
-            # Translation
-            x_shift = -np.mean(x_shifts)
-            y_shift = -np.mean(y_shifts)
-            M = np.float32([[1,0,x_shift],[0,1,y_shift]])
-            dst = cv2.warpAffine(im,M,(cols,rows))
-            # Rotation
-            M = cv2.getRotationMatrix2D((xc,yc),np.degrees(theta),1)
-            image_c[:,:,i+1] = cv.warpAffine(dst,M,(cols,rows))
 
-        # Below interpolates corrected values on grid following surface f(x,y) = z
-        image_c[:,:,1] = interpolate.griddata(points=points_corr, values=im.flatten('F'), xi=(x,y), method='linear')
+        # This method uses opencv remap - very fast and accurate
+        x_cor, y_cor = x-np.mean(x_shifts), y-np.mean(y_shifts) #shifts
+        points_cor = np.einsum('ji, mni -> jmn', rotation, np.dstack([x-xc, y-yc]))
+        x_map = points_cor[0,:,:]+xc
+        y_map = points_cor[1,:,:]+yc
+        x_map = x_map.astype(np.float32)
+        y_map = y_map.astype(np.float32)
+        image_c[:,:,i+1] = cv.remap(src=im, map1=x_map, map2=y_map, interpolation=cv.INTER_CUBIC)
+            
+    subset = image_c[:,:,1]==0
+    subset = ~subset #return true where we want to keep values
+
+    #get the bottom left corner of the image
+    inds=np.argwhere(subset)
+    colmin+=[np.amin(inds[:,1])]
+    rowmin+=[np.amin(inds[:,0])]
+    colmax+=[np.amax(inds[:,1])]
+    rowmax+=[np.amax(inds[:,0])]
+
+    deformedimage_corrected[~subset]=0
+
+    #remap to 0 - 255 dynamic range
+    im_min=np.amin(deformedimage_corrected)
+    im_max=np.amax(deformedimage_corrected)
+    deformedimage_corrected-=im_min
+    deformedimage_corrected=255*deformedimage_corrected/(im_max-im_min)
+
+    #append the deformed image to a list
+    deformedimages+=[deformedimage_corrected]
        
+    if printing==1:
+        deformedimage_corrected_toplot=image_c[:,:,1][rowmin[imno]:rowmax[imno],colmin[imno]:colmax[imno]]
+        originalimage=d.ims[:,:,0].astype('float32')
+
+        fig,([ax11,ax12,ax13],[ax21,ax22,ax23])=plt.subplots(nrows=2,ncols=3) 
+
+        ax11.imshow(subset)
+        ax11.set_title('remapping')
+        ax11.axis('off')
+
+        ax12.imshow(x_map)
+        ax12.set_title('x-shifts')
+        ax12.axis('off')
+
+        ax13.imshow(y_map)
+        ax13.set_title('y-shifts')
+        ax13.axis('off')
+
+        ax21.imshow(deformedimage,cmap='gray')
+        ax21.set_title('deformed_original')
+        ax21.axis('off')
+
+        ax22.imshow(deformedimage_corrected_toplot,cmap='gray')
+        ax22.set_title('deformed_corrected')
+        ax22.axis('off')
+
+        ax23.imshow(originalimage,cmap='gray')
+        ax23.set_title('undeformed')
+        ax23.axis('off')
+
+        plt.tight_layout(pad=0.4, w_pad=0.5, h_pad=0.5)
+        plt.show()
+
+
+
     return image_c
 
 def rot_calc(x_shift, y_shift, x_pos, y_pos, params0, ub, lb):

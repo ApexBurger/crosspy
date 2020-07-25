@@ -242,7 +242,7 @@ class DIC:
 
         #choose one of affine or polynomial methods
         if method=='rigid':
-            images_corrected=crosspy.im_correct(self.imageset,self)
+            images_corrected=crosspy.im_correct(self,printing)
         elif method=='polynomial':
             images_corrected=crosspy.polynom_im_correct(self,printing,fn)
         else:
