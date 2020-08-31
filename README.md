@@ -1,6 +1,6 @@
 # crosspy
 
-Python framework for FFT-based image cross correlation.
+Python framework for FFT-based image cross correlation. Uses subset method to obtain the deformation field.
 
 Bergsmo & McAuliffe 2020
 
