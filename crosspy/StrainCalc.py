@@ -58,12 +58,12 @@ def strain_l2(dx, dy, x, y):
     # Obtain bulk values in loop below
     for i in range(0,rows-1):
         for j in range(0,cols-1):
-            dhor_3pt_x = [dx[i,j-1], dx[i,j], dx[i,j+1]]
-            dhor_3pt_y = [dy[i,j-1], dy[i,j], dy[i,j+1]]
-            dver_3pt_x = [dx[i-1,j], dx[i,j], dx[i+1,j]]
-            dver_3pt_y = [dy[i-1,j], dy[i,j], dy[i+1,j]]
-            pos_x3 = [x[i,j-1], x[i,j], x[i,j+1]]
-            pos_y3 = [y[i-1,j], y[i,j], y[i+1,j]]
+            dhor_3pt_x = np.array([dx[i,j-1], dx[i,j], dx[i,j+1]])
+            dhor_3pt_y = np.array([dy[i,j-1], dy[i,j], dy[i,j+1]])
+            dver_3pt_x = np.array([dx[i-1,j], dx[i,j], dx[i+1,j]])
+            dver_3pt_y = np.array([dy[i-1,j], dy[i,j], dy[i+1,j]])
+            pos_x3 = np.array([x[i,j-1], x[i,j], x[i,j+1]])
+            pos_y3 = np.array([y[i-1,j], y[i,j], y[i+1,j]])
 
             # Determine second order poly fit and derivative
             coef_x = np.polyder(np.polyfit(pos_x3, dhor_3pt_x,2))
@@ -100,7 +100,6 @@ def strain_l2(dx, dy, x, y):
     strain = e_temp
     strain_effective = eeff_temp
     rotation = R
-    F = F
     
     return strain, strain_effective, rotation, F
 
