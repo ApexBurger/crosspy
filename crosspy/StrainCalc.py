@@ -17,11 +17,11 @@ def strain_calc(d, mapnos = 0, strain_method = 'l2'):
     dy = d.dy_maps[:,:,mapnos]
     # determine strain method
     if strain_method == '9nodes':
-        e11, e22, e12, eeff, R, F = strain_n9()
+        e, e_eff, r, f = strain_n9()
     elif strain_method == '8nodes':
-        e11, e22, e12, eeff, R, F = strain_n8()
+        e, e_eff, r, f = strain_n8()
     elif strain_method == '4nodes':
-        e11, e22, e12, eeff, R, F = strain_n4()
+        e, e_eff, r, f = strain_n4()
     elif strain_method == 'l2':
         e, e_eff, r, f = strain_l2(dx, dy, x, y)
     else:
@@ -55,7 +55,7 @@ def strain_l2(dx, dy, x, y):
     e11_temp, e22_temp, e12_temp = strain_l2_corners(dx, dy, x, y, e11_temp, e22_temp, e12_temp)
     e11_temp, e22_temp, e12_temp = strain_l2_edges(dx, dy, x, y, e11_temp, e22_temp, e12_temp)
 
-    # Obtain bulk values in loop below
+    # Obtain bulk values in loop below - corners and edges are already determined
     for i in range(0,rows-1):
         for j in range(0,cols-1):
             dhor_3pt_x = np.array([dx[i,j-1], dx[i,j], dx[i,j+1]])
@@ -71,18 +71,20 @@ def strain_l2(dx, dy, x, y):
             coef_xy = np.polyder(np.polyfit(pos_x3, dhor_3pt_y,2))
             coef_yx = np.polyder(np.polyfit(pos_y3, dhor_3pt_x,2))
 
-            # Create deformation gradient F
+            # Obtain values of polynomial fit at the centre of object pixel
         
-            du_dx = np.polyval(coef_x, x[i,j])
-            dv_dy = np.polyval(coef_y, y[i,j])
-            du_dy = np.polyval(coef_xy, x[i,j])
-            dv_dx = np.polyval(coef_yx, y[i,j])
+            du_dx = np.polyval(coef_x, x[i,j]) # du from dx map
+            dv_dy = np.polyval(coef_y, y[i,j]) # dv from dy map
+            du_dy = np.polyval(coef_xy, x[i,j]) # du from dy map
+            dv_dx = np.polyval(coef_yx, y[i,j]) # dv from dx map
 
+
+            # Create the deformation gradient F from displacements u and v
             F = np.array([[du_dx, du_dy, 0], [dv_dx, dv_dy, 0], [0, 0, -(du_dx+dv_dy)]])+np.eye(3)
             Ft = F.transpose()
             C_test = np.dot(F,Ft)
             C = np.matmul(F.transpose(), F) # Green-Lagrange tensor
-            V, Q = np.linalg.eig(C) #eigenvalues and vector
+            V, Q = np.linalg.eig(C) # eigenvalues V and vector Q
             V = np.diag(V)
             Ut = np.sqrt(V)
             U = np.matmul(Q.transpose(), np.matmul(Ut, Q))
