@@ -6,7 +6,6 @@ import multiprocessing
 import pyfftw 
 import numexpr as ne
 from crosspy.ImagePreparation import get_subset
-from crosspy.hs import *
 
 def plan_ffts(d,ffttype='fftw_numpy'):
     

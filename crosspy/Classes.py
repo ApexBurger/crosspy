@@ -7,7 +7,7 @@ from multiprocessing import Pool
 import functools
 import time
 import h5py
-
+import numpy as np
 import crosspy
 
 class Imset:
@@ -80,7 +80,6 @@ class DIC:
 # can't be accommodated by square subsets of given roi_size, they will be ignored).
 
     def __init__(self,images,roi,filter_settings,savingfolder=None):
-
         #if fed an Imset class
         if isinstance(images,crosspy.Imset):
             if images.n_ims<1:
@@ -123,12 +122,17 @@ class DIC:
             rd_maps = np.zeros((self.n_rows,self.n_cols,self.n_ims-1))
             th_maps = np.zeros((self.n_rows,self.n_cols,self.n_ims-1))
             hs_maps = np.zeros((self.n_rows,self.n_cols,self.n_ims-1))
+            js_maps = np.zeros((self.n_rows,self.n_cols,self.n_ims-1))
+
             for i in range(0,self.n_ims-1):
                 print('Running sequential DIC on image pair ' +str(i+1)+' of '+str(self.n_ims-1)+suffix +', total subsets per image: ' + str(self.n_subsets))
-                dx_maps[:,:,i],dy_maps[:,:,i],ph_maps[:,:,i],rd_maps[:,:,i],th_maps[:,:,i],hs_maps[:,:,i]=crosspy.run_DIC(d=self, imnos=[i,i+1],cores=cores, hs=True)
+                dx_maps[:,:,i],dy_maps[:,:,i],ph_maps[:,:,i],rd_maps[:,:,i],th_maps[:,:,i],hs_maps[:,:,i],js_maps[:,:,i]=crosspy.run_DIC(d=self, imnos=[i,i+1],cores=cores, hs=True)
+
             self.rd_maps = rd_maps
             self.th_maps = th_maps
             self.hs_maps = hs_maps
+            self.js_maps = js_maps
+
         else:
             for i in range(0,self.n_ims-1):
                 print('Running sequential DIC on image pair ' +str(i+1)+' of '+str(self.n_ims-1)+suffix)
@@ -158,12 +162,16 @@ class DIC:
             rd_maps = np.zeros((self.n_rows,self.n_cols,self.n_ims-1))
             th_maps = np.zeros((self.n_rows,self.n_cols,self.n_ims-1))
             hs_maps = np.zeros((self.n_rows,self.n_cols,self.n_ims-1))
+            js_maps = np.zeros((self.n_rows,self.n_cols,self.n_ims-1))
+
             for i in range(0,self.n_ims-1):
-                print('Running cumulative DIC on image pair ' +str(i+1)+' of '+str(self.n_ims-1)+suffix)
-                dx_maps[:,:,i],dy_maps[:,:,i],ph_maps[:,:,i],rd_maps[:,:,i],th_maps[:,:i],hs_maps[:,:,i]=crosspy.run_DIC(self, [0,i+1],cores, discontinuity=True)
+                print('Running sequential DIC on image pair ' +str(i+1)+' of '+str(self.n_ims-1)+suffix +', total subsets per image: ' + str(self.n_subsets))
+                dx_maps[:,:,i],dy_maps[:,:,i],ph_maps[:,:,i],rd_maps[:,:,i],th_maps[:,:,i],hs_maps[:,:,i],js_maps[:,:,i]=crosspy.run_DIC(d=self, imnos=[0,i+1],cores=cores, hs=True)
+
             self.rd_maps = rd_maps
             self.th_maps = th_maps
             self.hs_maps = hs_maps
+            self.js_maps = js_maps
         else:
             for i in range(0,self.n_ims):
                 print('Running cumulative DIC on image pair ' +str(i+1)+' of '+str(self.n_ims-1)+suffix)
