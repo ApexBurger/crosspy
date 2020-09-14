@@ -5,7 +5,7 @@ from crosspy.subset_compare import subset_compare
 from dask import delayed, compute
 from dask.distributed import Client, LocalCluster
 
-def run_DIC(d,imnos=[0,1],hs=False, cores=None,ffttype='fftw_numpy'):
+def run_DIC(d,imnos=[0,1],hs=False, cores=None, scheduler="processes", ffttype='fftw_numpy'):
     #fft type can be : fftw_numpy (default), fftw_scipy, else defaults to numpy
 
     #set up numexpr to run with the chosen number of threads

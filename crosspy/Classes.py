@@ -105,7 +105,7 @@ class DIC:
         self.x_pos = self.ss_locations[:,0].reshape(self.n_rows,self.n_cols)+roi['size_pass']/2
         self.y_pos = self.ss_locations[:,1].reshape(self.n_rows,self.n_cols)+roi['size_pass']/2
 
-    def run_sequential(self,cores=None,ffttype='fftw_numpy', hs=False):
+    def run_sequential(self,cores=None, scheduler="processes", ffttype='fftw_numpy', hs=False):
         #Perform DIC on consecutive images, using the previous as a reference.
         #if cores=None looks for maximum for your system.
         #fft type can be: 'fftw_numpy' (default), 'fftw_scipy', or anything else gives numpy
@@ -126,7 +126,7 @@ class DIC:
 
             for i in range(0,self.n_ims-1):
                 print('Running sequential DIC on image pair ' +str(i+1)+' of '+str(self.n_ims-1)+suffix +', total subsets per image: ' + str(self.n_subsets))
-                dx_maps[:,:,i],dy_maps[:,:,i],ph_maps[:,:,i],rd_maps[:,:,i],th_maps[:,:,i],hs_maps[:,:,i],js_maps[:,:,i]=crosspy.run_DIC(d=self, imnos=[i,i+1],cores=cores, hs=True)
+                dx_maps[:,:,i],dy_maps[:,:,i],ph_maps[:,:,i],rd_maps[:,:,i],th_maps[:,:,i],hs_maps[:,:,i],js_maps[:,:,i]=crosspy.run_DIC(d=self, imnos=[i,i+1],cores=cores, scheduler=scheduler, hs=True)
 
             self.rd_maps = rd_maps
             self.th_maps = th_maps
@@ -136,7 +136,7 @@ class DIC:
         else:
             for i in range(0,self.n_ims-1):
                 print('Running sequential DIC on image pair ' +str(i+1)+' of '+str(self.n_ims-1)+suffix)
-                dx_maps[:,:,i],dy_maps[:,:,i],ph_maps[:,:,i]=crosspy.run_DIC(self,imnos=[i,i+1],cores=cores)
+                dx_maps[:,:,i],dy_maps[:,:,i],ph_maps[:,:,i]=crosspy.run_DIC(self,imnos=[i,i+1],cores=cores, scheduler=scheduler)
 
         self.ph_maps=ph_maps
         self.dx_maps=dx_maps
