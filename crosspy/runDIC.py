@@ -24,7 +24,7 @@ def run_DIC(d,imnos=[0,1],hs=False, cores=None, scheduler="processes", ffttype='
     pyfftw.interfaces.cache.enable()   
 
     cluster = LocalCluster(n_workers=cores, 
-                       threads_per_worker=1,
+                       threads_per_worker=2,
                        memory_limit='16GB')
     client = Client(cluster)
 
@@ -47,7 +47,7 @@ def run_DIC(d,imnos=[0,1],hs=False, cores=None, scheduler="processes", ffttype='
             result = delayed(subset_compare)(d=d,imnos=[0,1],subset_n=i,prepared_ffts=prepared_ffts,hs=True)
             results.append(result)
         
-        results_list = compute(*results)
+        results_list = compute(*results, scheduler=scheduler)
         # for i in range(0,d.n_subsets):
         #     results[i,:] = subset_compare(d=d,imnos=[0,1],subset_n=i,prepared_ffts=prepared_ffts,hs=True)
         #     print(i)
@@ -75,7 +75,7 @@ def run_DIC(d,imnos=[0,1],hs=False, cores=None, scheduler="processes", ffttype='
             result = delayed(subset_compare)(d=d,imnos=[0,1],subset_n=i,prepared_ffts=prepared_ffts,hs=False)
             results.append(result)
         
-        results_list = compute(*results)
+        results_list = compute(*results, scheduler=scheduler)
         
         dxs,dys,phs = zip(*results_list)
 
