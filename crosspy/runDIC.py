@@ -2,10 +2,9 @@ import numpy as np
 import pyfftw
 from crosspy.XCF import plan_ffts
 from crosspy.subset_compare import subset_compare
-from dask import delayed, compute
-from dask.distributed import Client, LocalCluster
+from joblib import delayed, Parallel
 
-def run_DIC(d,imnos=[0,1],hs=False, cores=None, scheduler="processes", ffttype='fftw_numpy'):
+def run_DIC(d,imnos=[0,1],hs=False, cores=None,ffttype='fftw_numpy'):
     #fft type can be : fftw_numpy (default), fftw_scipy, else defaults to numpy
 
     #set up numexpr to run with the chosen number of threads
@@ -23,12 +22,6 @@ def run_DIC(d,imnos=[0,1],hs=False, cores=None, scheduler="processes", ffttype='
     #enable the pyfftw cache for speedup
     pyfftw.interfaces.cache.enable()   
 
-    cluster = LocalCluster(n_workers=cores, 
-                       threads_per_worker=2,
-                       memory_limit='16GB')
-    client = Client(cluster)
-
-    print(client)
     #check for discontinuity tracker
     if hs == True:
         r = np.zeros(d.n_subsets)
@@ -38,23 +31,18 @@ def run_DIC(d,imnos=[0,1],hs=False, cores=None, scheduler="processes", ffttype='
         v = np.zeros(d.n_subsets)
         j = np.zeros(d.n_subsets)
 
-        #results = np.zeros((d.n_subsets,9))
-        #results = np.zeros((d.n_subsets,9))
-        results = []
-        results_list = []
-        # main loop
-        for i in range(d.n_subsets):
-            result = delayed(subset_compare)(d=d,imnos=[0,1],subset_n=i,prepared_ffts=prepared_ffts,hs=True)
-            results.append(result)
-        
-        results_list = compute(*results, scheduler=scheduler)
-        # for i in range(0,d.n_subsets):
-        #     results[i,:] = subset_compare(d=d,imnos=[0,1],subset_n=i,prepared_ffts=prepared_ffts,hs=True)
-        #     print(i)
-        dxs,dys,phs,r,theta,hson, u, v, j = zip(*results_list)
+        results = np.zeros((d.n_subsets,9))
 
-        client.close()
-        cluster.close()
+        # main loop
+        # for i in range(d.n_subsets):
+        #     result = delayed(subset_compare)(d=d,imnos=[0,1],subset_n=i,prepared_ffts=prepared_ffts,hs=True)
+        #     results.append(result)
+        
+        results = Parallel(n_jobs=cores, verbose=5)(delayed(subset_compare) \
+            (subset_n=i, d=d, imnos=[0,1], prepared_ffts=prepared_ffts, hs=True) for i in range(d.n_subsets))
+        
+        dxs,dys,phs,r,theta,hson, u, v, j = zip(*results)
+
         # convert to maps
         dx_map=np.reshape(dxs,(d.n_rows,d.n_cols),'F')
         dy_map=np.reshape(dys,(d.n_rows,d.n_cols),'F')
@@ -66,21 +54,15 @@ def run_DIC(d,imnos=[0,1],hs=False, cores=None, scheduler="processes", ffttype='
         v_map = np.reshape(v,(d.n_rows,d.n_cols),'F')
         j_map = np.reshape(j,(d.n_rows,d.n_cols),'F')
 
-        return dx_map, dy_map, ph_map, r_map, theta_map, hson_map, j_map
+        return dx_map, dy_map, ph_map, r_map, theta_map, hson_map, u_map, v_map, j_map
     else:
-        results = []
-        results_list = []
+        results = np.empty(shape=(d.n_subsets,9))
         # main loop
-        for i in range(d.n_subsets):
-            result = delayed(subset_compare)(d=d,imnos=[0,1],subset_n=i,prepared_ffts=prepared_ffts,hs=False)
-            results.append(result)
-        
-        results_list = compute(*results, scheduler=scheduler)
-        
-        dxs,dys,phs = zip(*results_list)
+        results = Parallel(n_jobs=cores, verbose=5)(delayed(subset_compare) \
+            (subset_n=i, d=d, imnos=[0,1], prepared_ffts=prepared_ffts, hs=False) for i in range(d.n_subsets))
 
-        client.close()
-        cluster.close()
+        dxs,dys,phs = zip(*results)
+
         # convert to maps
         dx_map=np.reshape(dxs,(d.n_rows,d.n_cols),'F')
         dy_map=np.reshape(dys,(d.n_rows,d.n_cols),'F')
