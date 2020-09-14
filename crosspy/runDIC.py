@@ -3,7 +3,7 @@ import pyfftw
 from crosspy.XCF import plan_ffts
 from crosspy.subset_compare import subset_compare
 from dask import delayed, compute
-from dask.distributed import Client
+from dask.distributed import Client, LocalCluster
 
 def run_DIC(d,imnos=[0,1],hs=False, cores=None,ffttype='fftw_numpy'):
     #fft type can be : fftw_numpy (default), fftw_scipy, else defaults to numpy
@@ -23,8 +23,12 @@ def run_DIC(d,imnos=[0,1],hs=False, cores=None,ffttype='fftw_numpy'):
     #enable the pyfftw cache for speedup
     pyfftw.interfaces.cache.enable()   
 
-    client = Client(n_workers=cores)
-    client.get_versions(check=True)
+    cluster = LocalCluster(n_workers=cores, 
+                       threads_per_worker=1,
+                       memory_limit='16GB')
+    client = Client(cluster)
+
+    print(client)
     #check for discontinuity tracker
     if hs == True:
         r = np.zeros(d.n_subsets)
@@ -48,7 +52,9 @@ def run_DIC(d,imnos=[0,1],hs=False, cores=None,ffttype='fftw_numpy'):
         #     results[i,:] = subset_compare(d=d,imnos=[0,1],subset_n=i,prepared_ffts=prepared_ffts,hs=True)
         #     print(i)
         dxs,dys,phs,r,theta,hson, u, v, j = zip(*results_list)
+
         client.close()
+        cluster.close()
         # convert to maps
         dx_map=np.reshape(dxs,(d.n_rows,d.n_cols),'F')
         dy_map=np.reshape(dys,(d.n_rows,d.n_cols),'F')
@@ -72,7 +78,9 @@ def run_DIC(d,imnos=[0,1],hs=False, cores=None,ffttype='fftw_numpy'):
         results_list = compute(*results)
         
         dxs,dys,phs = zip(*results_list)
+
         client.close()
+        cluster.close()
         # convert to maps
         dx_map=np.reshape(dxs,(d.n_rows,d.n_cols),'F')
         dy_map=np.reshape(dys,(d.n_rows,d.n_cols),'F')

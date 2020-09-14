@@ -389,7 +389,7 @@ def minimise_rt_lstsq(subsets, d, prepared_ffts):
         # Both in same direction => no discontinuity
         dxu,dyu,ccu = fxcorr(subsets[:,:,0],subsets[:,:,1], d, prepared_ffts)
         return np.array([dxu,dyu,ccu,False,False,False,False,False,False])
-    elif (u != 0 or v != 0) and (rsq > 0.8): # dx or dy are not the same - presence of discontinuity
+    elif (u != 0 or v != 0) and (rsq > 0.7): # dx or dy are not the same - presence of discontinuity
         # One value does not match direction of displacment - indicating a kinematic shift
         dx,dy,cc,dxi,dyi,cci = hs_corr(x, subsets, d, prepared_ffts)
         u = dx - dxi
