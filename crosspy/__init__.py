@@ -8,3 +8,4 @@ from crosspy.XCF import *
 from crosspy.plotting import *
 from crosspy.hs import *
 from crosspy.subset_compare import *
+from crosspy.mask import *

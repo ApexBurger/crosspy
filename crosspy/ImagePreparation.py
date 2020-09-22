@@ -45,10 +45,10 @@ def get_subset(ims,size_pass,ss_locations,n,imno):
 
     # if norm==True:
     #     #normalise
-    subset_norm=(subset-np.ones_like(subset)*np.mean(subset))/np.std(subset)
+    #subset_norm=(subset-np.ones_like(subset)*np.mean(subset))/np.std(subset)
     # else:
     #     subset_norm=np.array(subset) 
 
-    return subset_norm
+    return subset #subset_norm
 
 

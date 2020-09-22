@@ -1,7 +1,7 @@
 # Subset compare is placed in separate file to allow cloudpickling in parallel
 
 from crosspy.ImagePreparation import get_subset
-from crosspy.hs import minimise_rt_lstsq
+from crosspy.hs import *
 import numexpr as ne
 import numpy as np
 
@@ -11,10 +11,9 @@ def subset_compare(subset_n,d,imnos,prepared_ffts,hs=False):
     test=get_subset(d.ims,d.roi[0],d.ss_locations,subset_n,imnos[1])
     #get the displacements 
     if hs == True:
-        subsets = np.stack((ref,test),axis=2)
-        results = minimise_rt_lstsq(subsets,d,prepared_ffts)
+        #subsets = np.stack((ref,test),axis=2)
+        results = correlate_subsets(ref,test,d,prepared_ffts)
         return results
     else:
-        from crosspy.XCF import fxcorr
-        dxs,dys,phs=fxcorr(ref,test,d,prepared_ffts)
+        dxs,dys,phs= fxcorr(ref,test,d,prepared_ffts)
         return dxs,dys,phs
