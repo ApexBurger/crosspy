@@ -304,7 +304,7 @@ def correlate_subsets(a, b, d, prepared_ffts):
         j = np.sqrt((dx-dxi)**2 + (dy-dyi)**2)
         out = np.array([dx,dy,cc,r,theta,True,j])
         # print(j/jump)
-    else:
+    elif len(mins) > 2:
         # Multiple discontinuities - TO DO
         mins = mins[:2]
         # Single discontinuity -> try finding peak
@@ -314,6 +314,8 @@ def correlate_subsets(a, b, d, prepared_ffts):
         dx,dy,cc,dxi,dyi,cci = hs_corr([r,theta], a, b, d, prepared_ffts)
         j = np.sqrt((dx-dxi)**2 + (dy-dyi)**2)
         out = np.array([dx,dy,cc,r,theta,True,j])
-        print(r,theta)
+    else:
+        # No correlation found
+        out = out
 
     return out
