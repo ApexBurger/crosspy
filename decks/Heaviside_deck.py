@@ -1,61 +1,43 @@
-# Heaviside deck
+#%%
+# preamble
+import numpy as np
+import matplotlib.pyplot as plt
+from pathlib import Path
+from crosspy import DIC, Imset
+import os
+import cv2
 
-load_ext autoreload
-%autoreload 2
+# folder path
 
+folder_path=Path(r'C:\Users\alexb\Dropbox\My PC (DESKTOP-R7R8K2S)\Documents\DIC\crosspy\data\tester_hor')
+Images = Imset(folder_path,'tif')
 
-# %%
+# Image crop
 
-# %%
+crop_on = False
 
-if __name__ == "__main__":
-    import os as o
+if crop_on:
+    img = Images.imload([0,1])
+    y = 175
+    h = 1000
+    x = 525
+    w = 1000
+    Images = img[y:y+h, x:x+w, :]
+else:
+    Images = Images.imload([0,1])
 
-    from pathlib import Path
-    import time
+# Image crop
 
-    import crosspy as xpy
-    
-    t0=time.time()
+roi_1stpass = dict(size_pass = 40, overlap_percentage = 80, xcf_mesh=40)
+filter_settings = [4,2,15,8]
+# first pass
 
-    folder_path=Path(r'D:\DIC\crosspy\data\Phantom')
-    Images = xpy.Imset(folder_path,'tif',[0,1])
+dic_1stpass = DIC(Images,roi_1stpass,filter_settings)
 
-    ss_size_final = 70
+print(dic_1stpass.n_subsets)
+dic_1stpass.run_sequential(cores=4,hs=False)
 
-    # # fft filter settings: high pass, high pass width, low pass, low pass width
-    filter_settings=[4,2,15,8]
-    roi_1stpass = dict(size_pass = ss_size_final*2, overlap_percentage = 80, xcf_mesh=ss_size_final*2)
-
-    # # build the dic class (but don't run it yet):
-    dic_1stpass=xpy.DIC(Images[0,1],roi_1stpass,filter_settings)
-
-    # # run the dic on specified images within the stack, and get displacements:
-    dic_1stpass.run_sequential(cores=4)
-    dic_1stpass.plot_displacements()
-
-    # # correct the images and instantiate a new DIC class
-    corrected_images=dic_1stpass.correct(method='polynomial',printing=1)
-
-    roi_2ndpass = dict(size_pass = ss_size_final, overlap_percentage = 80, xcf_mesh=ss_size_final)
-    dic_2ndpass = xpy.DIC(corrected_images,roi_2ndpass,filter_settings)
-
-    # # run the second pass
-    dic_2ndpass.run_sequential(cores=4, hs=True)
-    dic_2ndpass.plot_displacements()
-
-    dic_2ndpass.calculate_strain()
-    dic_2ndpass.plot_strains()
-
-    dic_2ndpass.save_data()
-
-
-# %%
-
-print(dic_2ndpass.hs_maps[:,:,0])
-
-import matplotlib.pyplot as plt 
-
-plt.hist(dic_2ndpass.th_maps[:,:,0])
-
+# dic_1stpass.plot_displacements()
+dic_1stpass.calculate_strain()
+dic_1stpass.plot_strains()
 # %%

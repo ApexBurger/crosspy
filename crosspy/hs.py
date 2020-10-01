@@ -280,6 +280,9 @@ def disc_locate(a, b, mins, d, prepared_ffts):
 
 def correlate_subsets(a, b, d, prepared_ffts):
     """ Returns dx, dy, cc, hson, r, theta, jump
+    Locates theta based on vector drawn between peak locations in correlogram
+    
+    Works well for test data set but is not able to pick up multiple peaks in real datasets
 
     """ 
     # This library is extremely efficient.
@@ -319,3 +322,91 @@ def correlate_subsets(a, b, d, prepared_ffts):
         out = out
 
     return out
+
+def disc_locate_angular(a, b, d, prepared_ffts):
+    """ Searches in fine theta space to locate a discontinuity
+        1. Searches for min CC value in circle near centre (notice sqdiff has good correlation for low values)
+        2. Searches in a sector of theta_min +- 10 degrees for a range of r values
+        3. Locates best fit of r and theta based on sum of CC and inverted mask CC values
+
+        This method is effectively brute forcing which is optimised by considering the symmetry
+        in reg(r,theta) over a subset
+    """
+
+    # search space
+    t = np.linspace(1,360,16, dtype=np.float16)
+    r = np.full(t.shape,a.shape[0]/10, dtype=np.float16)
+
+    c1 = np.c_[r,t]
+
+    res = np.array([hs_corr_norm(i,a,b,d, prepared_ffts, 'cv.TM_SQDIFF_NORMED') for i in c1]).reshape(16,6)
+    dx,dy,cc,dxi,dyi,cci = [res[:,i] for i in range(6)]
+
+    # find min
+    cc_sum = cc+cci
+    minval = np.min(cc_sum[np.nonzero(cc_sum)])
+    minloc = np.where(cc_sum == minval)[0]
+    r_sol, t_sol = c1[minloc[0], :]
+    # Arc search
+    t_min = (t_sol - 10) % 360
+    t_max = (t_sol + 10) % 360
+    t2 = np.linspace(t_min,t_max, 10, dtype=np.float16)
+    r2 = np.linspace(0,a.shape[0]/2, 10, dtype=np.float16)
+
+    r2, t2 = np.meshgrid(r2,t2)
+
+    r2 = r2.flatten()
+    t2 = t2.flatten()
+    c2 = np.c_[r2,t2]
+    res = np.array([hs_corr_norm(i,a,b,d, prepared_ffts, 'cv.TM_SQDIFF_NORMED') for i in c2]).reshape(10*10,6)
+    dx,dy,cc,dxi,dyi,cci = [res[:,i] for i in range(6)]
+    # find min
+    cc_sum = cc+cci
+    minval = np.min(cc_sum[np.nonzero(cc_sum)])
+    minloc = np.where(cc_sum == minval)[0]
+    if len(minloc)>1:
+        minloc = minloc[0]
+    minloc = int(minloc)
+    # minimums
+    r_sol, t_sol = c2[minloc, :]
+
+    # find jump
+    x0 = dx[minloc]
+    x1 = dxi[minloc]
+    y0 = dy[minloc]
+    y1 = dyi[minloc]
+    jump = np.sqrt((x1-x0)**2 + (y1-y0)**2)
+    return r_sol, t_sol, jump
+
+def minimise_rt_lstsq(a, b, cc_t, d, prepared_ffts):
+
+    # obtain untreated dx,dy,
+    dxu, dyu, ccu = reg(a, b, method="cv.TM_CCORR_NORMED")
+
+    if ccu < cc_t:
+        r, theta, jump = disc_locate_angular(a,b, d, prepared_ffts)
+        x = np.array([r,theta])
+        # obtain dx,dy,cc from r,theta
+        dx,dy,cc,dxi,dyi,cci = hs_corr_norm(x,a,b,d,prepared_ffts)
+        # compare values
+        u = dx-dxi
+        v = dy-dyi
+    else:
+        dxu,dyu,ccu = fxcorr(a, b, d, prepared_ffts)
+        return np.array([dxu,dyu,ccu,False,False,False,False])
+    #flag = binary_disc(10,subsets, d,prepared_ffts)
+    if u == 0 and v == 0 and not r: # both dx and dy are in the same direction
+        # Both in same direction => no discontinuity
+        dxu,dyu,ccu = fxcorr(a, b, d, prepared_ffts)
+        return np.array([dxu,dyu,ccu,False,False,False,False])
+    elif (u != 0 or v != 0) and r: #(rsq > 0.5): # dx or dy are not the same - presence of discontinuity
+        # One value does not match direction of displacment - indicating a kinematic shift
+        dx,dy,cc,dxi,dyi,cci = hs_corr(x, a, b, d, prepared_ffts)
+        u = dx - dxi
+        v = dy - dyi
+        j = np.sqrt(u**2+v**2)
+        return np.array([dx,dy,cc,r,theta,True,j])
+    else:
+        # fit is bad indicating no symmetry
+        dxu,dyu,ccu = fxcorr(a, b, d, prepared_ffts)
+        return np.array([dxu,dyu,ccu,False,False,False,False])
