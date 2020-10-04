@@ -188,21 +188,21 @@ def hs_corr(x, a, b, dic, prepared_ffts):
     hsfilter = gen_hsfilter(a,b, r, theta)
     
     # assign to clean variables for legibility
-    a = a
+    ah = a * hsfilter
     bh = b * hsfilter
     
     # invert selection
     hsfilter_inv = ~hsfilter
 
     # apply to clean variables
-    bhi = b * hsfilter_inv
+    ch = a * hsfilter_inv
+    dh = b * hsfilter_inv
 
-    results = fxcorr(a, bh, dic, prepared_ffts)
-    results_inv = fxcorr(a, bhi, dic, prepared_ffts)
+    results = fxcorr(ah, bh, dic, prepared_ffts)
+    results_inv = fxcorr(ch, dh, dic, prepared_ffts)
 
     # return vectorised result containing dx,dy,cc
     return np.concatenate((results,results_inv),axis=None)
-
 
 def hs_corr_norm(x, a, b, d, prepared_ffts, method='cv.TM_SQDIFF_NORMED'):
     # unpack vector 
@@ -212,19 +212,19 @@ def hs_corr_norm(x, a, b, d, prepared_ffts, method='cv.TM_SQDIFF_NORMED'):
     hsfilter = gen_hsfilter(a,b, r, theta)
 
     # apply to clean variables
-    a = a
+    ah = a * hsfilter
     bh = b * hsfilter
 
     # get inverse
     hsfilter_inv = ~hsfilter
 
     # apply to clean variables
-    dh = a * hsfilter_inv
-
+    ch = a * hsfilter_inv
+    dh = b * hsfilter_inv
     # cross correlate using freg
-    results = np.array(reg(a,bh, method))
-    results_inv = np.array(reg(a,dh, method))
-     
+    results = np.array(reg(ah,bh, method))
+    results_inv = np.array(reg(ch,dh, method))
+
     return np.concatenate((results,results_inv),axis=None)
 
 def unit_vector(vector):
@@ -334,12 +334,13 @@ def disc_locate_angular(a, b, d, prepared_ffts):
     """
 
     # search space
-    t = np.linspace(1,360,16, dtype=np.float16)
+    t = np.linspace(1,360,36, dtype=np.float16)
     r = np.full(t.shape,a.shape[0]/10, dtype=np.float16)
 
     c1 = np.c_[r,t]
 
-    res = np.array([hs_corr_norm(i,a,b,d, prepared_ffts, 'cv.TM_SQDIFF_NORMED') for i in c1]).reshape(16,6)
+    res = np.array([hs_corr_norm(i,a,b,d, prepared_ffts, 'cv.TM_SQDIFF_NORMED')  \
+        for i in c1]).reshape(36,6)
     dx,dy,cc,dxi,dyi,cci = [res[:,i] for i in range(6)]
 
     # find min
@@ -378,12 +379,12 @@ def disc_locate_angular(a, b, d, prepared_ffts):
     jump = np.sqrt((x1-x0)**2 + (y1-y0)**2)
     return r_sol, t_sol, jump
 
-def minimise_rt_lstsq(a, b, cc_t, d, prepared_ffts):
+def minimise_rt_lstsq(a, b, cc_thresh, d, prepared_ffts):
 
     # obtain untreated dx,dy,
-    dxu, dyu, ccu = reg(a, b, method="cv.TM_CCORR_NORMED")
+    dxu, dyu, ccu = reg(a, b, method="cv.TM_SQDIFF_NORMED")
 
-    if ccu < cc_t:
+    if ccu > cc_thresh: # Catch which excludes excellent correlations
         r, theta, jump = disc_locate_angular(a,b, d, prepared_ffts)
         x = np.array([r,theta])
         # obtain dx,dy,cc from r,theta
@@ -391,22 +392,20 @@ def minimise_rt_lstsq(a, b, cc_t, d, prepared_ffts):
         # compare values
         u = dx-dxi
         v = dy-dyi
-    else:
-        dxu,dyu,ccu = fxcorr(a, b, d, prepared_ffts)
-        return np.array([dxu,dyu,ccu,False,False,False,False])
-    #flag = binary_disc(10,subsets, d,prepared_ffts)
-    if u == 0 and v == 0 and not r: # both dx and dy are in the same direction
-        # Both in same direction => no discontinuity
-        dxu,dyu,ccu = fxcorr(a, b, d, prepared_ffts)
-        return np.array([dxu,dyu,ccu,False,False,False,False])
-    elif (u != 0 or v != 0) and r: #(rsq > 0.5): # dx or dy are not the same - presence of discontinuity
-        # One value does not match direction of displacment - indicating a kinematic shift
-        dx,dy,cc,dxi,dyi,cci = hs_corr(x, a, b, d, prepared_ffts)
-        u = dx - dxi
-        v = dy - dyi
         j = np.sqrt(u**2+v**2)
-        return np.array([dx,dy,cc,r,theta,True,j])
+        if j >= 1:
+            # If there is a jump accept treatment
+            dx , dy, _, dxi, dyi, _ = hs_corr(x, a, b, d, prepared_ffts)
+            r = float(r)
+            theta = float(theta)
+            out = [dx, dy, cc, r, theta, True, j]
+        elif j < 1:
+            # If no jump, reject treatment
+            dx, dy, _ = fxcorr(a,b,d,prepared_ffts)
+            out = [dx, dy, ccu, 0., 0., False, 0.]
+
+        return out
     else:
-        # fit is bad indicating no symmetry
-        dxu,dyu,ccu = fxcorr(a, b, d, prepared_ffts)
-        return np.array([dxu,dyu,ccu,False,False,False,False])
+        dxu,dyu,cc = fxcorr(a, b, d, prepared_ffts)
+        out = [dxu,dyu,ccu,False,False,False,False]
+        return out

@@ -4,7 +4,7 @@ from crosspy.XCF import plan_ffts
 from crosspy.subset_compare import subset_compare
 from joblib import delayed, Parallel
 
-def run_DIC(d,imnos=[0,1],hs=False, cc_t=0.8, cores=1,ffttype='fftw_numpy'):
+def run_DIC(d,imnos=[0,1],hs=False, cc_t=0., cores=1,ffttype='fftw_numpy'):
     #discontinuity enables or disables slip trace tracking via heaviside filtering
 
     #preallocate for this DIC pair

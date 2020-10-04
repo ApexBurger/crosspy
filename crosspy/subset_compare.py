@@ -5,7 +5,7 @@ from crosspy.hs import *
 import numexpr as ne
 import numpy as np
 
-def subset_compare(subset_n,d,imnos,prepared_ffts,hs=False,cc_t=0.8):
+def subset_compare(subset_n,d,imnos,prepared_ffts,hs=False,cc_t=0.):
     #grab the reference and test subsets, and get subpixel registration
     ref=get_subset(d.ims,d.roi[0],d.ss_locations,subset_n,imnos[0])
     test=get_subset(d.ims,d.roi[0],d.ss_locations,subset_n,imnos[1])

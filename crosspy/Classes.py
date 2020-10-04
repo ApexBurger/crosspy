@@ -105,7 +105,7 @@ class DIC:
         self.x_pos = self.ss_locations[:,0].reshape(self.n_rows,self.n_cols)+roi['size_pass']/2
         self.y_pos = self.ss_locations[:,1].reshape(self.n_rows,self.n_cols)+roi['size_pass']/2
 
-    def run_sequential(self,cores=None, ffttype='fftw_numpy', hs=False, cc_t=0.8):
+    def run_sequential(self,cores=None, ffttype='fftw_numpy', hs=False, cc_t=0.):
         #Perform DIC on consecutive images, using the previous as a reference.
         #if cores=None looks for maximum for your system.
         #fft type can be: 'fftw_numpy' (default), 'fftw_scipy', or anything else gives numpy
