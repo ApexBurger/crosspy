@@ -352,7 +352,7 @@ def disc_locate_angular(a, b, d, prepared_ffts):
     t_min = (t_sol - 10) % 360
     t_max = (t_sol + 10) % 360
     t2 = np.linspace(t_min,t_max, 10, dtype=np.float16)
-    r2 = np.linspace(0,a.shape[0]/2, 10, dtype=np.float16)
+    r2 = np.linspace(0,a.shape[0]/4, 10, dtype=np.float16)
 
     r2, t2 = np.meshgrid(r2,t2)
 
