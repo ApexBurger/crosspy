@@ -154,6 +154,9 @@ def reg(a,b, method = 'cv.TM_SQDIFF_NORMED'):
         row_shift=loc1-a.shape[0]
         col_shift=loc2-a.shape[0]
 
+    if abs(col_shift) > subsets.shape[0]/2 or abs(row_shift) > subsets.shape[1]/2:
+        col_shift = 0
+        row_shift = 0
     
     return col_shift, row_shift, cc
 
