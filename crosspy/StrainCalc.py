@@ -1,5 +1,6 @@
 # Strain calculation functions
 import numpy as np
+from numpy.polynomial.polynomial import polyder, polyval, polyfit
 import crosspy
 
 def strain_calc(d, mapnos = 0, strain_method = 'l2'):
@@ -66,17 +67,17 @@ def strain_l2(dx, dy, x, y):
             pos_y3 = np.array([y[i-1,j], y[i,j], y[i+1,j]])
 
             # Determine second order poly fit and derivative
-            coef_x = np.polyder(np.polyfit(pos_x3, dhor_3pt_x,2))
-            coef_y = np.polyder(np.polyfit(pos_y3, dver_3pt_y,2))
-            coef_xy = np.polyder(np.polyfit(pos_x3, dhor_3pt_y,2))
-            coef_yx = np.polyder(np.polyfit(pos_y3, dhor_3pt_x,2))
+            coef_x = polyder(polyfit(pos_x3, dhor_3pt_x,2))
+            coef_y = polyder(polyfit(pos_y3, dver_3pt_y,2))
+            coef_xy = polyder(polyfit(pos_x3, dhor_3pt_y,2))
+            coef_yx = polyder(polyfit(pos_y3, dhor_3pt_x,2))
 
             # Obtain values of polynomial fit at the centre of object pixel
         
-            du_dx = np.polyval(coef_x, x[i,j]) # du from dx map
-            dv_dy = np.polyval(coef_y, y[i,j]) # dv from dy map
-            du_dy = np.polyval(coef_xy, x[i,j]) # du from dy map
-            dv_dx = np.polyval(coef_yx, y[i,j]) # dv from dx map
+            du_dx = polyval(coef_x, x[i,j]) # du from dx map
+            dv_dy = polyval(coef_y, y[i,j]) # dv from dy map
+            du_dy = polyval(coef_xy, x[i,j]) # du from dy map
+            dv_dx = polyval(coef_yx, y[i,j]) # dv from dx map
 
 
             # Create the deformation gradient F from displacements u and v
@@ -119,10 +120,10 @@ def strain_l2_corners(dx, dy, x, y, e11, e22, e12):
     pos_x1 = [x[0,0], x[0,1]]
     pos_y1 = [y[0,0], y[1,0]]
     # determine first order of poly fit
-    coef_x = np.polyfit(pos_x1, dx_x1,1)
-    coef_y = np.polyfit(pos_y1, dy_y1,1)
-    coef_xy = np.polyfit(pos_x1, dx_y1,1)
-    coef_yx = np.polyfit(pos_y1, dy_x1,1)
+    coef_x = polyfit(pos_x1, dx_x1,1)
+    coef_y = polyfit(pos_y1, dy_y1,1)
+    coef_xy = polyfit(pos_x1, dx_y1,1)
+    coef_yx = polyfit(pos_y1, dy_x1,1)
     # equal to strain
     e11[0,0] = coef_x[0]
     e22[0,0] = coef_y[0]
@@ -136,10 +137,10 @@ def strain_l2_corners(dx, dy, x, y, e11, e22, e12):
     pos_x2 = [x[0,cols-1], x[1,cols]]
     pos_y2 = [y[0,cols], y[1,cols]]
     # determine first order of poly fit
-    coef_2 = np.polyfit(pos_x2, dx_x2,1)
-    coef_2 = np.polyfit(pos_y2, dy_y2,1)
-    coef_xy = np.polyfit(pos_x2, dx_y2,1)
-    coef_yx = np.polyfit(pos_y2, dy_x2,1)
+    coef_2 = polyfit(pos_x2, dx_x2,1)
+    coef_2 = polyfit(pos_y2, dy_y2,1)
+    coef_xy = polyfit(pos_x2, dx_y2,1)
+    coef_yx = polyfit(pos_y2, dy_x2,1)
     # equal to strain
     e11[0,cols] = coef_x[0]
     e22[0,cols] = coef_y[0]
@@ -153,10 +154,10 @@ def strain_l2_corners(dx, dy, x, y, e11, e22, e12):
     pos_x3 = [x[rows,0], x[rows,1]]
     pos_y3 = [y[rows-1,0], y[rows,0]]
     # determine first order of poly fit
-    coef_x = np.polyfit(pos_x3, dx_x3,1)
-    coef_y = np.polyfit(pos_y3, dy_y3,1)
-    coef_xy = np.polyfit(pos_x3, dx_y3,1)
-    coef_yx = np.polyfit(pos_y3, dy_x3,1)
+    coef_x = polyfit(pos_x3, dx_x3,1)
+    coef_y = polyfit(pos_y3, dy_y3,1)
+    coef_xy = polyfit(pos_x3, dx_y3,1)
+    coef_yx = polyfit(pos_y3, dy_x3,1)
     # equal to strain
     e11[rows,0] = coef_x[0]
     e22[rows,0] = coef_y[0]
@@ -169,10 +170,10 @@ def strain_l2_corners(dx, dy, x, y, e11, e22, e12):
     pos_x4 = [x[rows,cols-1], x[rows,cols]]
     pos_y4 = [y[rows-1,cols], y[rows,cols]]
     # determine first order of poly fit
-    coef_x = np.polyfit(pos_x4, dx_x4,1)
-    coef_y = np.polyfit(pos_y4, dy_y4,1)
-    coef_xy = np.polyfit(pos_x4, dx_y4,1)
-    coef_yx = np.polyfit(pos_y4, dy_x4,1)
+    coef_x = polyfit(pos_x4, dx_x4,1)
+    coef_y = polyfit(pos_y4, dy_y4,1)
+    coef_xy = polyfit(pos_x4, dx_y4,1)
+    coef_yx = polyfit(pos_y4, dy_x4,1)
     # equal to strain
     e11[rows,cols] = coef_x[0]
     e22[rows,cols] = coef_y[0]
@@ -195,13 +196,13 @@ def strain_l2_edges(dx, dy, x, y, e11, e22, e12):
             x_3pt = [x[i,j-1], x[i,j], x[i,j+1]]
             y_2pt = [y[i,j], y[i+1,j]]
 
-            coef_x = np.polyder(np.polyfit(x_3pt, dx_3pt_x, 2))
-            coef_y = np.polyfit(y_2pt, dy_2pt_y, 1)
-            coef_xy = np.polyder(np.polyfit(x_3pt, dx_3pt_y, 2))
-            coef_yx = np.polyfit(y_2pt, dy_2pt_x, 1)
-            e11[i,j] = np.polyval(coef_x,x[i,j])
+            coef_x = polyder(polyfit(x_3pt, dx_3pt_x, 2))
+            coef_y = polyfit(y_2pt, dy_2pt_y, 1)
+            coef_xy = polyder(polyfit(x_3pt, dx_3pt_y, 2))
+            coef_yx = polyfit(y_2pt, dy_2pt_x, 1)
+            e11[i,j] = polyval(coef_x,x[i,j])
             e22[i,j] = coef_y[0]
-            e12[i,j] = 0.5*(np.polyval(coef_xy, x[i,j])+coef_yx[0])
+            e12[i,j] = 0.5*(polyval(coef_xy, x[i,j])+coef_yx[0])
 
     # Bottom edge
 
@@ -214,13 +215,13 @@ def strain_l2_edges(dx, dy, x, y, e11, e22, e12):
             x_3pt = [x[i,j-1], x[i,j], x[i,j+1]]
             y_2pt = [y[i-1,j], y[i,j]]
 
-            coef_x = np.polyder(np.polyfit(x_3pt, dx_3pt_x, 2))
-            coef_y = np.polyfit(y_2pt, dy_2pt_y, 1)
-            coef_xy = np.polyder(np.polyfit(x_3pt, dx_3pt_y, 2))
-            coef_yx = np.polyfit(y_2pt, dy_2pt_x, 1)
-            e11[i,j] = np.polyval(coef_x,x[i,j])
+            coef_x = polyder(polyfit(x_3pt, dx_3pt_x, 2))
+            coef_y = polyfit(y_2pt, dy_2pt_y, 1)
+            coef_xy = polyder(polyfit(x_3pt, dx_3pt_y, 2))
+            coef_yx = polyfit(y_2pt, dy_2pt_x, 1)
+            e11[i,j] = polyval(coef_x,x[i,j])
             e22[i,j] = coef_y[0]
-            e12[i,j] = 0.5*(np.polyval(coef_xy, x[i,j])+coef_yx[0])
+            e12[i,j] = 0.5*(polyval(coef_xy, x[i,j])+coef_yx[0])
 
     # Left edge
 
@@ -233,13 +234,13 @@ def strain_l2_edges(dx, dy, x, y, e11, e22, e12):
             x_2pt = [x[i,j], x[i,j+1]]
             y_3pt = [y[i-1,j], y[i,j], y[i+1,j]]
 
-            coef_x = np.polyfit(x_2pt, dx_2pt_x,1)
-            coef_y = np.polyder(np.polyfit(y_3pt, dy_3pt_y, 2))
-            coef_xy = np.polyfit(x_2pt, dx_2pt_y, 1)
-            coef_yx = np.polyder(np.polyfit(y_3pt, dy_3pt_x, 2))
+            coef_x = polyfit(x_2pt, dx_2pt_x,1)
+            coef_y = polyder(polyfit(y_3pt, dy_3pt_y, 2))
+            coef_xy = polyfit(x_2pt, dx_2pt_y, 1)
+            coef_yx = polyder(polyfit(y_3pt, dy_3pt_x, 2))
             e11[i,j] = coef_x[0]
-            e22[i,j] = np.polyval(coef_y,y[i,j])
-            e12[i,j] = 0.5*(coef_xy[0] + np.polyval(coef_yx, y[i,j]))
+            e22[i,j] = polyval(coef_y,y[i,j])
+            e12[i,j] = 0.5*(coef_xy[0] + polyval(coef_yx, y[i,j]))
 
     # Right edge 
 
@@ -252,12 +253,12 @@ def strain_l2_edges(dx, dy, x, y, e11, e22, e12):
             x_2pt = [x[i,j-1], x[i,j]]
             y_3pt = [y[i-1,j], y[i,j], y[i+1,j]]
 
-            coef_x = np.polyfit(x_2pt, dx_2pt_x,1)
-            coef_y = np.polyder(np.polyfit(y_3pt, dy_3pt_y, 2))
-            coef_xy = np.polyfit(x_2pt, dx_2pt_y, 1)
-            coef_yx = np.polyder(np.polyfit(y_3pt, dy_3pt_x, 2))
+            coef_x = polyfit(x_2pt, dx_2pt_x,1)
+            coef_y = polyder(polyfit(y_3pt, dy_3pt_y, 2))
+            coef_xy = polyfit(x_2pt, dx_2pt_y, 1)
+            coef_yx = polyder(polyfit(y_3pt, dy_3pt_x, 2))
             e11[i,j] = coef_x[0]
-            e22[i,j] = np.polyval(coef_y,y[i,j])
-            e12[i,j] = 0.5*(coef_xy[0] + np.polyval(coef_yx, y[i,j]))
+            e22[i,j] = polyval(coef_y,y[i,j])
+            e12[i,j] = 0.5*(coef_xy[0] + polyval(coef_yx, y[i,j]))
 
         return e11, e22, e12
