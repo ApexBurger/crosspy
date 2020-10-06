@@ -165,7 +165,7 @@ class DIC:
             js_maps = np.zeros((self.n_rows,self.n_cols,self.n_ims-1))
 
             for i in range(0,self.n_ims-1):
-                print('Running sequential DIC on image pair ' +str(i+1)+' of '+str(self.n_ims-1)+suffix +', total subsets per image: ' + str(self.n_subsets)) \
+                print('Running sequential DIC on image pair ' +str(i+1)+' of '+str(self.n_ims-1)+suffix +', total subsets per image: ' + str(self.n_subsets))
                 dx_maps[:,:,i],dy_maps[:,:,i],ph_maps[:,:,i],rd_maps[:,:,i],th_maps[:,:,i],hs_maps[:,:,i],js_maps[:,:,i] \
                 = crosspy.run_DIC(d=self, imnos=[0,i+1],cores=cores, hs=True, cc_t=cc_t)
 
