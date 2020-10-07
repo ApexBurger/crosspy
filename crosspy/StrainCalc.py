@@ -1,6 +1,6 @@
 # Strain calculation functions
 import numpy as np
-from numpy.polynomial.polynomial import polyder, polyval, polyfit
+from numpy import polyder, polyval, polyfit
 import crosspy
 
 def strain_calc(d, mapnos = 0, strain_method = 'l2'):
