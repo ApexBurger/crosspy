@@ -221,7 +221,7 @@ class DIC:
         if self.dx_maps.any()==False:
             raise Exception('No displacements available for strain calculation!')
         #Perform strain calculation on consecutive images, using the previous as a reference.
-        self.mapnos = dx_maps.shape[2]
+        self.mapnos = self.dx_maps.shape[2]
 
         # preallocate arrays - strain, rotation and deformation gradient
         # are stored in tensors for each subset for each map
