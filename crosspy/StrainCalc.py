@@ -12,33 +12,17 @@ def strain_calc(d, mapnos = 0, strain_method = 'l2'):
     #   disp_y = dy_maps
 
     # get displacements and positions
-    x = d.x_pos
-    y = d.y_pos
+    x = d.x_pos[:,:,mapnos]
+    y = d.y_pos[:,:,mapnos]
     dx = d.dx_maps[:,:,mapnos]
     dy = d.dy_maps[:,:,mapnos]
     # determine strain method
-    if strain_method == '9nodes':
-        e, e_eff, r, f = strain_n9()
-    elif strain_method == '8nodes':
-        e, e_eff, r, f = strain_n8()
-    elif strain_method == '4nodes':
-        e, e_eff, r, f = strain_n4()
-    elif strain_method == 'l2':
+    if strain_method == 'l2':
         e, e_eff, r, f = strain_l2(dx, dy, x, y)
     else:
         raise Exception('Invalid strain method!')
-
-
     return e, e_eff, r, f
     
-def strain_n4():
-    raise Exception('U A KEEN BEAN - WORK IN PROGRESS')
-
-def strain_n8():
-    raise Exception('U A MEAN TEEN - WORK IN PROGRESS')
-
-def strain_n9():
-    raise Exception('U A LEAN MACHINE - WORK IN PROGRESS')
 
 def strain_l2(dx, dy, x, y):
     # Function to determine strain via polynomial fitting and l2 min
@@ -262,3 +246,11 @@ def strain_l2_edges(dx, dy, x, y, e11, e22, e12):
             e12[i,j] = 0.5*(coef_xy[0] + polyval(coef_yx, y[i,j]))
 
         return e11, e22, e12
+
+
+def kpolyval():
+    pass
+def kpolyfit():
+    pass
+def kpolyder():
+    pass

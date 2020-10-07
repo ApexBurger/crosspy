@@ -221,7 +221,7 @@ class DIC:
         if self.dx_maps.any()==False:
             raise Exception('No displacements available for strain calculation!')
         #Perform strain calculation on consecutive images, using the previous as a reference.
-        self.mapnos = np.size(self.dx_maps, 2)
+        self.mapnos = dx_maps.shape[2]
 
         # preallocate arrays - strain, rotation and deformation gradient
         # are stored in tensors for each subset for each map
@@ -234,15 +234,15 @@ class DIC:
 
         for i in range(0,self.mapnos):
             print('Calculating strain on map ' +str(i+1)+' of '+str(self.mapnos)+suffix)
-            strain[:,:,:,:,i], strain_eff[:,:,:,i], rotation[:,:,:,:,i], F = crosspy.strain_calc(self,
+            strain[:,:,:,:,i], strain_eff[:,:,:,i], rotation[:,:,:,:,i], F[:,:,:,:,i] = crosspy.strain_calc(self,
                 mapnos=i, strain_method=strain_method)
 
         self.strain_11 = strain[:,:,0,0,:]
         self.strain_22 = strain[:,:,1,1,:]
         self.strain_12 = strain[:,:,1,0,:]
         self.strain_eff = strain_eff[:,:,0,:]
-        self.rotation = rotation
-        self.deformation_gradient = F
+        self.rotation = rotation[:,:,:,:,:]
+        self.deformation_gradient = F[:,:,:,:,:]
         print('... Completed in (s) '+str(time.time()-t0))
 
     def correct(self,method='polynomial',printing=0,fn=None):
