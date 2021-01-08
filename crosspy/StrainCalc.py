@@ -12,8 +12,8 @@ def strain_calc(d, mapnos = 0, strain_method = 'l2'):
     #   disp_y = dy_maps
 
     # get displacements and positions
-    x = d.x_pos[:,:,mapnos]
-    y = d.y_pos[:,:,mapnos]
+    x = d.x_pos
+    y = d.y_pos
     dx = d.dx_maps[:,:,mapnos]
     dy = d.dy_maps[:,:,mapnos]
     # determine strain method
