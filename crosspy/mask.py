@@ -1,5 +1,8 @@
+## THIS FUNCTION IS UNUSED - THE ACTIVE VERSION LIES IN hs.py
+
+
 from numba import double, jit, njit, vectorize
-from numba import int32, float32, uint8, jitclass, float64, int64, boolean
+from numba import int32, float32, uint8, float64, int64, boolean
 import numpy as np
 import time
 
