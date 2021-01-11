@@ -11,15 +11,27 @@ import numpy as np
 import crosspy
 
 class Imset:
+    """
+    This instantiates a DIC image class, holding metadata. 
+    The image is not loaded until the method .imload() is called.
+
+    Inputs:
+        folder_path (pathlib.Path object) - path to the folder of images.
+        extension (str) - image file extension to search for.
+        indices (list or int) - specify which images to take.
     
-    # This instantiates a DIC image class, holding metadata. The image is not loaded until the method .imload() is called.
-    # Inputs are folder path and image file extension - will identify all images of that same extension within the folder.
-    # Additional input is which indices of the found list do you want to construct the image from. Default = 0 means all.
+    Methods:
+        self.imload(numbers) - Load and return corresponding images identiifed with metadata.
+    
+    Attributes:
+        self.folder - file path to saving folder.
+        self.extension - extension of images.
+        self.paths - file paths of images.
+        self.names - file names of images.
+        self.n_ims - number of images in the set.
 
+    """
     def __init__(self, folder_path,extension,indices=None):
-
-        #import crosspy
-
         self.folder = folder_path
         self.extension = extension
         foundpaths = sorted(self.folder.glob('*.'+extension))
@@ -49,7 +61,16 @@ class Imset:
 
 
     def imload(self,numbers):
-        # This loads the images identifed in the Imset enumerated by 'numbers'
+        """
+        Loads the images identified in the parent Imset which are enumerated by the input.
+
+        Inputs
+            numbers (list of int): Which images in the imset to load.
+
+        Outputs:
+            imarray_stack: numpy array of images of dimensions [H, W, n_images]
+
+        """
 
         for i, n in enumerate(numbers):
 
@@ -74,10 +95,57 @@ class Imset:
         return imarray_stack
 
 class DIC:
-# A class that holds information relating to a DIC run on an imageset
-# Call .run(filter_settings...) to map x, y displacements
-# At the moment it runs on the top left portion of the image (ie. if there are pixels to the right and down that...
-# can't be accommodated by square subsets of given roi_size, they will be ignored).
+    """
+    A class that holds information relating to a DIC run on an imageset
+    At the moment it runs on the top left portion of the image (ie. if there are pixels to the right and down 
+    that can't be accommodated by square subsets of given roi_size, they will be ignored).
+
+    Inputs:
+        images (Imset) - Imset containing metadata for loading image stacks.
+        roi (dict) - ROI settings for DIC. 
+                     This should be dictionary with keys "size_pass", "overlap_percentage", "XCF_mesh".
+        filter_settings (list) - High / low pass Fourier filter settings. 
+                     This should be [high_pass_filter, high_pass_filter_width, low_pass_filter, low_pass_filter_width] in px.
+        savingfolder (str or pathlib.Path) - location to write results to if requested.
+
+    Methods:
+        self.run_sequential(cores, ffttype, hs, cc_t) - run DIC on images with displacements/strains relative to previous image in stack. Saves results to attributes.
+        self.run_cumulative(cores, ffttype, hs, cc_t) - run DIC on images with displacements/strains relative to first image in stack. Saves results to attributes.
+        
+        ## These can only be run after .run_sequential() or .run_cumulative() ##
+        self.calculate_strain(strain_method) - infer the strain using calculated displacements. Saves results to attributes.
+        self.correct(method, printing, fn) - correct the images by removing the calculated displacements. Returns an updated stack of images.
+        self.plot_displacements(colmap) - plot the calculated displacements if available in attributes.
+
+        ## These can only be run after .calculate_strains() ##
+        self.plot_strains(colmap) - plot the calculated strains if available in attributes.
+        self.plot_strain_meta(bins) - plots histograms of strains if available in attributes.
+        self.save_data(output_folder) - save results to hdf5.
+    
+    Attributes:
+        ## Available after .run_sequential() or .run_cumulative() ##
+        self.dx_maps - x displacement maps
+        self.dy_maps - y displacement maps
+        self.ph_maps - cross-correlation peak height maps
+
+        ## and if heaviside being used ##
+        self.rd_maps
+        self.th_maps
+        self.hs_maps
+        self.js_maps
+
+        ## Available after .calculate_strains() ##
+        self.strain_11 - 11 (xx) strain
+        self.strain_22 - 22 (yy) strain
+        self.strain_12 - 12 (xy) strain
+        self.strain_eff - von Mises effective strain
+        self.rotation - 12 (xy) rotation
+        self.deformation_gradient - full deformation gradient tensor
+
+    """
+
+    # Call .run(filter_settings...) to map x, y displacements
+
 
     def __init__(self,images,roi,filter_settings,savingfolder=None):
         #if fed an Imset class
@@ -106,8 +174,25 @@ class DIC:
         self.y_pos = self.ss_locations[:,1].reshape(self.n_rows,self.n_cols)+roi['size_pass']/2
 
     def run_sequential(self,cores=1, ffttype='fftw_numpy', hs=False, cc_t=0.):
-        #Perform DIC on consecutive images, using the previous as a reference.
-        #fft type can be: 'fftw_numpy' (default), 'fftw_scipy', or anything else gives numpy
+        """
+        Run DIC with reference images as previous in the stack. Generates attributes for this class.
+
+        Inputs
+            cores (int) - how many CPU cores to run subsets in parallel on.
+            ffttype (str) - one of 'fftw_numpy', 'fftw_scipy', or 'numpy' - which FFT implementation to use.
+            hs (bool) - run Heaviside or not.
+            cc_t (float) - cross-correlation peak height threshold.
+
+        Outputs
+            self.rd_maps
+            self.th_maps
+            self.hs_maps
+            self.js_maps
+            self.ph_maps
+            self.dx_maps
+            self.dy_maps
+
+        """
 
         #preallocate for all DIC pairs
         ph_maps=np.zeros((self.n_rows,self.n_cols,self.n_ims-1))
@@ -146,9 +231,25 @@ class DIC:
         #return dx_maps, dy_maps, ph_maps
 
     def run_cumulative(self,cores=1,ffttype='fftw_numpy', discontinuity=False, cc_t=0.):
-        #Perform DIC on sequential images, using the first as a reference.
+        """
+        Run DIC with first image as reference. Generates attributes for this class.
+
+        Inputs
+            cores (int) - how many CPU cores to run subsets in parallel on.
+            ffttype (str) - one of 'fftw_numpy', 'fftw_scipy', or 'numpy' - which FFT implementation to use.
+            hs (bool) - run Heaviside or not.
+            cc_t (float) - cross-correlation peak height threshold.
+
+        Outputs
+            self.rd_maps
+            self.th_maps
+            self.hs_maps
+            self.js_maps
+            self.ph_maps
+            self.dx_maps
+            self.dy_maps
  
-        #fft type can be: 'fftw_numpy' (default), 'fftw_scipy', or anything else gives numpy
+        """
 
         #preallocate for all DIC pairs
         ph_maps=np.zeros((self.n_rows,self.n_cols,self.n_ims-1))
@@ -246,6 +347,19 @@ class DIC:
         print('... Completed in (s) '+str(time.time()-t0))
 
     def correct(self,method='polynomial',printing=0,fn=None):
+        """
+        Remove displacements saved to DIC attributes from the input Imset by fitting and subtracting a polynomial. Returns corrected images.
+
+        Inputs:
+            method (str) - one of 'polynomial' or 'rigid'  displacement correction, latter is affine.
+            printing (bool) - whether to print to console.
+            fn - optional functional form to solve for BG correction. If none, quadratic assumed. See polynom_im_correct documentation for more.
+
+        Outputs:
+            images_corrected - numpy array of corrected images. 
+
+        """
+
         print('Correcting images based on DIC results ...')
         t0=time.time()
 
