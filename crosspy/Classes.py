@@ -11,6 +11,7 @@ import numpy as np
 import crosspy
 import os as o
 
+
 class Imset:
     """
     This instantiates a DIC image class, holding metadata. 
@@ -412,7 +413,7 @@ class DIC:
             print('Saving displacement and strain data')
         
         e11 = pd.DataFrame(data=self.strain_11)
-        df.to_csv(sep=",", index=False,Header=False)
+
         with h5py.File(file, 'w') as f:
             f.create_dataset('dx maps', data=self.dx_maps)
             f.create_dataset('dy maps', data=self.dy_maps)
