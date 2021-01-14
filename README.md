@@ -22,6 +22,7 @@ Additionally:
 - Subpixel Fourier registration functions are included in the .XCF module.
 - The discrete Fourier transform employed can be user-specified. We recommend the 'pyfftw_numpy' argument.
 - Rigid body translation, rotation and polynomial fitting correction algorithms
+- Discontinuity tolerance is incorporated via a "Heaviside" implementation 
 
 ------
 
