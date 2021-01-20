@@ -15,16 +15,27 @@ The general process of the method is outlined below
 
 
 """
-
-def ROI_selector():
-    """ This function selects a rectangular region of interest within the loaded images
+#%%
+def ROI_selector(a, b):
+    """ This function selects a rectangular region of interest within the loaded images (a,b)
     """
     pass
 
-def subset_gen():
+
+
+
+
+def subset_gen(a, b, xc, yc, w):
     """ this function generates upsampled subset images and applies a mask to them
     """
-    pass
+    mask = np.zeros(a.shape)
+
+    l = int(w/2)
+    mask[yc-l:yc+l,xc-l:xc+l] = np.ones((w,w))
+    
+    a_masked = a * mask
+
+    return a_masked
 
 def correlation_criterion(x, f, g):
     """ This function returns the correlation coefficient for respective input parameters
@@ -42,7 +53,9 @@ def subset_split():
     """
     pass
 
+class DIC_classical(DIC):
 
+    
 
 
 
@@ -65,6 +78,16 @@ Images = Imset(folder_path,'tif',[0,1])
 #%%
 
 images = Images.imload([0,1])
+#%%
+
+a = images[:,:,0]
+b = images[:,:,1]
+
+a_masked = subset_gen(a,b,32,32,32)
+
+fig,ax = plt.subplots(2)
+ax[0].imshow(a_masked)
+ax[1].imshow(b)
 #%%
 # artifically deform an image
 
