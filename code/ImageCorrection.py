@@ -58,7 +58,7 @@ def im_correct(Images, d, method = "remapping" ):
             y_map = points_cor[1,:,:]+yc
             x_map = x_map.astype(np.float32)
             y_map = y_map.astype(np.float32)
-            image_c[:,:,i+1] = cv2.remap(src=im, map1=x_map, map2=y_map, interpolation=cv2.INTER_CUBIC)
+            image_c[:,:,i+1] = cv.remap(src=im, map1=x_map, map2=y_map, interpolation=cv2.INTER_CUBIC)
             
         elif method == 'affine':
             # Applies an affine translation and rotation - very fast but can cause blurry images
@@ -67,10 +67,10 @@ def im_correct(Images, d, method = "remapping" ):
             x_shift = -np.mean(x_shifts)
             y_shift = -np.mean(y_shifts)
             M = np.float32([[1,0,x_shift],[0,1,y_shift]])
-            dst = cv2.warpAffine(im,M,(cols,rows))
+            dst = cv.warpAffine(im,M,(cols,rows))
             # Rotation
-            M = cv2.getRotationMatrix2D((xc,yc),np.degrees(theta),1)
-            image_c[:,:,i+1] = cv2.warpAffine(dst,M,(cols,rows))
+            M = cv.getRotationMatrix2D((xc,yc),np.degrees(theta),1)
+            image_c[:,:,i+1] = cv.warpAffine(dst,M,(cols,rows))
 
         # Below interpolates corrected values on grid following surface f(x,y) = z
         image_c[:,:,1] = interpolate.griddata(points=points_corr, values=im.flatten('F'), xi=(x,y), method='linear')

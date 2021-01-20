@@ -10,7 +10,7 @@ import cv2 as cv
 folder_path = "C:\\Users\\alexb\\Desktop\\Full_size\\"
 im_list = []
 name_list = []
-for filename in glob.glob(folder_path + "*.tif"):
+for filename in glob.glob(folder_path + "*.tiff"):
     im = cv.imread(filename, 0)
     name_list.append(filename)
     im_list.append(im)

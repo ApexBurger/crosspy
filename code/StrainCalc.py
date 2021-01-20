@@ -26,6 +26,7 @@ def strain_calc(d, mapnos = 0, strain_method = 'l2'):
 
 def strain_l2(dx, dy, x, y):
     # Function to determine strain via polynomial fitting and l2 min
+    # The purpose of this strain algo is to smooth the strain assuming that strain is a continous gradient field
     # Preallocate arrays
     rows = np.size(dx,0)
     cols = np.size(dx,1)
@@ -67,7 +68,7 @@ def strain_l2(dx, dy, x, y):
             # Create the deformation gradient F from displacements u and v
             F = np.array([[du_dx, du_dy, 0], [dv_dx, dv_dy, 0], [0, 0, -(du_dx+dv_dy)]])+np.eye(3)
             Ft = F.transpose()
-            C_test = np.dot(F,Ft)
+            # C_test = np.dot(F,Ft)
             C = np.matmul(F.transpose(), F) # Green-Lagrange tensor
             V, Q = np.linalg.eig(C) # eigenvalues V and vector Q
             V = np.diag(V)
