@@ -25,26 +25,31 @@ def ROI_selector(a, b):
 
 
 
-def subset_gen(a, b, xc, yc, w):
+def subset_gen(a, b, n, d):
     """ this function generates upsampled subset images and applies a mask to them
     """
+    xc, yc = d.ss_locations[n,:]
+    w = d.roi[0]
+
     mask = np.zeros(a.shape)
-
+    mask = np.pad(mask, a.shape[0])
     l = int(w/2)
+    xc = xc+a.shape[1]
+    yc = yc+a.shape[0]
     mask[yc-l:yc+l,xc-l:xc+l] = np.ones((w,w))
-    
-    a_masked = a * mask
 
+    a_masked = np.pad(a, a.shape[0]) * mask
+    
     return a_masked
 
-def correlation_criterion(x, f, g):
+def correlation_criterion(x, a, b):
     """ This function returns the correlation coefficient for respective input parameters
     x = [u, v, dudx, dudy, dvdy, dvdx]
     """
     cc = 0
     return cc
 
-def corr_min(f,g):
+def corr_min(a,b):
     """ This function returns the minima/extremum (depending on criteria) of the correlation criterion for subsets f,g
     """
 
@@ -53,9 +58,32 @@ def subset_split():
     """
     pass
 
-class DIC_classical(DIC):
+def run_opt(d,imnos=[0,1],hs=False, cc_t=0.):
+    """ Runtime function for optimising correlation around first order shape function
+    """
+
+    # preallocate for this DIC pair
+    phs=np.zeros(d.n_subsets)
+    u = np.zeros(d.n_subsets)
+    v = np.zeros(d.n_subsets)
+    dudx = np.zeros(d.n_subsets)
+    dvdy = np.zeros(d.n_subsets)
+    dudy = np.zeros(d.n_subsets)
+    dvdx = np.zeros(d.n_subsets)
+
+    for i in range(d.n_subsets):
+        print(i)
 
     
+
+
+
+
+class DIC_classical():
+    """ incorporate the main runtime into the class later...
+    """
+    pass
+
 
 
 
@@ -76,16 +104,24 @@ folder_path=Path(r'C:\Users\alexb\Desktop\crosspy\data\Disc_tester')
 Images = Imset(folder_path,'tif',[0,1])
 
 #%%
-
+filter_settings=[4,2,15,8]
 images = Images.imload([0,1])
+
+roi = dict(size_pass = 32, overlap_percentage = 90, xcf_mesh=150)
+dic_1stpass = DIC(Images,roi,filter_settings)
+
+dic_1stpass.roi
 #%%
 
 a = images[:,:,0]
 b = images[:,:,1]
+d = dic_1stpass
+n = 500
 
-a_masked = subset_gen(a,b,32,32,32)
 
-fig,ax = plt.subplots(2)
+a_masked = subset_gen(a,b,n,d)
+
+fig,ax = plt.subplots(1,2,figsize=(15,10))
 ax[0].imshow(a_masked)
 ax[1].imshow(b)
 #%%
