@@ -75,6 +75,9 @@ class Imset:
         """
 
         for i, n in enumerate(numbers):
+            # for massive images
+            Image.MAX_IMAGE_PIXELS = None
+
 
             path=self.paths[n]
             #open as grayscale

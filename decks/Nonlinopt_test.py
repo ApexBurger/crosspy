@@ -24,23 +24,39 @@ def ROI_selector(a, b):
 
 
 
-
-def subset_gen(a, b, n, d):
-    """ this function generates upsampled subset images and applies a mask to them
+def interp_subset(array,factor):
+    """ This function up-samples an array with spline biquintic interpolation
+    This is done "lazily" by scipy
     """
-    xc, yc = d.ss_locations[n,:]
-    w = d.roi[0]
+    x = np.arange(0,array.shape[1],1)
+    y = np.arange(0,array.shape[0],1)
+    z = array
 
-    mask = np.zeros(a.shape)
-    mask = np.pad(mask, a.shape[0])
-    l = int(w/2)
-    xc = xc+a.shape[1]
-    yc = yc+a.shape[0]
-    mask[yc-l:yc+l,xc-l:xc+l] = np.ones((w,w))
+    # Interpolation is biquintic - can be changed to lesser orders
+    f = interpolate.interp2d(x,y,z,kind="quintic")
 
-    a_masked = np.pad(a, a.shape[0]) * mask
-    
-    return a_masked
+    # Upsampling is px_old * factor = px_new
+    step = 1/factor
+
+    xnew = np.arange(0,array.shape[1],step)
+    ynew = np.arange(0,array.shape[0],step)
+    # normalise
+    image = f(ynew,xnew)
+    image *= (255.0/image.max())
+
+    # floor to remove below zero values
+    image = np.where(image < 0, 0, image)
+    return  image.astype(np.float32)
+
+
+def formmask(a, b, n, d):
+    """ generate a mask
+    """
+    mask = 0
+    return mask
+
+def maskunion(a,b,mask):
+    pass
 
 def correlation_criterion(x, a, b):
     """ This function returns the correlation coefficient for respective input parameters
@@ -113,41 +129,163 @@ dic_1stpass = DIC(Images,roi,filter_settings)
 dic_1stpass.roi
 #%%
 
-a = images[:,:,0]
-b = images[:,:,1]
+im1 = images[:,:,0]
+im2 = images[:,:,1]
 d = dic_1stpass
-n = 500
-
-
-a_masked = subset_gen(a,b,n,d)
-
-fig,ax = plt.subplots(1,2,figsize=(15,10))
-ax[0].imshow(a_masked)
-ax[1].imshow(b)
 #%%
-# artifically deform an image
+# get some subsets
 
-def image_deform(imarray, du,dv):
-    """ This function artifically deforms an image array
-    according to input parameters
+n = 0
+
+from crosspy.ImagePreparation import get_subset
+
+ref=get_subset(d.ims,d.roi[0],d.ss_locations,n,0)
+test=get_subset(d.ims,d.roi[0],d.ss_locations,n,1)
+
+#%%
+# attempt to upsample
+from scipy import interpolate
+
+z = ref
+
+f = 1
+a = interp_subset(ref,factor=f)
+b = interp_subset(test,factor=f)
+fig,ax = plt.subplots(1,2)
+
+ax[0].imshow(a)
+ax[1].imshow(b)
+# %%
+
+# form with mask
+
+def formmask(roigrid, f):
+    # mask is a regularized grid upsampled
+    xs = roigrid.shape[1]*f
+    ys = roigrid.shape[0]*f
+
+    # create a mask with same size as roigrid
+    mask = np.zeros(shape=(ys,xs))
+
+    return mask
+
+def maskunion(subset,x1,y1,f,mask):
+    # pad transformed subest to achieve same size as deformed map
+    # pad mask with subset width
+    # mask = np.pad(mask,subset.shape[0])
+    off = subset.shape[0]
+    # indices
+    w = int(subset.shape[0])
+    print(x1,w,off)
+    x1 = (x1*f) #+ off
+    x2 = x1 + w
+    y1 = (y1*f) #+ off
+    y2 = y1 + w
+    print(x1,x2)
+    mask[y1:y2,x1:x2] = subset
+    union = mask
+    return union
+
+roigrid = im1
+mask = formmask(roigrid,f)
+masku = maskunion(a,d.ss_locations[n,0],d.ss_locations[n,1],f,mask)
 
 
+fig,ax = plt.subplots(1,2)
+
+ax[0].imshow(masku)
+ax[1].imshow(interp_subset(im2,f))
+
+# %%
+import cv2 as cv
+def correlogram(a, b, method):
     """
+        Returns correlogram of a and b arrays using openCV library
+        This library is extremely efficient.
+        
+    """
+    # zero pad reference image 
+    img = np.pad(a, a.shape[0])
+    img2 = img.copy()
+    template = b
+    w, h = template.shape[::-1]
+    img = img2.copy()
+    meth = eval(method)
+
+    # Obtain correlogram through square-difference normed
+    return cv.matchTemplate(img,template,meth)
+
+ax = masku.astype(np.float32)
+bx = interp_subset(im2,f).astype(np.float32)
+
+print(ax.shape,bx.shape)
+cc = correlogram(ax, bx, 'cv.TM_CCOEFF_NORMED')
 
 
-    return imarray_sheared
+fig, axs = plt.subplots(1,3,figsize=(20,30))
+axs[0].imshow(ax)
+axs[1].imshow(bx)
+axs[2].imshow(cc)
+# transform subset using first order transformation
 
-im_sheared = image_shear(images[:,:,0],-1,-1)
+# %%
+def reg(a,b,f, method = 'cv.TM_SQDIFF_NORMED'):
+    """registers shifts from correlogram
+    """
+    res = correlogram(a, b, method)
+    
+    if method == 'cv.TM_SQDIFF_NORMED':
+        cc = np.abs(np.amin(res))
+        loc=np.argmin(res)
+        loc1,loc2=np.unravel_index(loc, res.shape)
 
-plt.imshow(im_sheared)
+        row_shift=loc1-a.shape[0]
+        col_shift=loc2-a.shape[0]
+    else:
+        cc = np.abs(np.max(res))
+        loc=np.argmax(res)
+        loc1,loc2=np.unravel_index(loc, res.shape)
 
-#%% Initial guess
+        row_shift=loc1-a.shape[0]
+        col_shift=loc2-a.shape[0]
+
+    # if abs(col_shift) > a.shape[0]/2 or abs(row_shift) > a.shape[1]/2:
+    #     col_shift = 0
+    #     row_shift = 0
+    
+    return -col_shift/f, -row_shift/f, cc
 
 
+reg(ax,bx,f, method='cv.TM_CCOEFF_NORMED')
+# %%
 
-#%% Newton - Raphson method for finding deformation maping parameters
+def warp_subset(x, subset):
+    u, v, dudx, dudy, dvdx, dvdy = x
 
-def NR_def():
-    pass
+    c = int(subset.shape[0]/2)
+    w = int(subset.shape[0]/2)
+    xs = np.arange(-w,w,1)
+    ys = xs
+    xx, yy = np.meshgrid(xs,ys)
+    
+    
+    xcur = xref + u
+    warped_subset = xcur
+    return warped_subset
 
 
+c = int(ref.shape[0]/2)
+w = int(ref.shape[0]/2)
+xs = np.arange(-w,w,1)
+ys = xs
+xx, yy = np.meshgrid(xs,ys)
+
+xcur = lambda xref,xc,yref,yc,u,dudx,dudy:\
+        xref+u+dudx(xref-xc)+dudy(yref-yc)
+ycur = lambda xref,xc,yref,yc,v,dvdy,dvdx:\
+        yref+v+dvdx(xref-xc)+dvdy(yref-yc)
+
+x_f = xcur(xx,0, )
+
+plt.imshow(yy)
+# %%
