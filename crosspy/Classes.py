@@ -73,11 +73,9 @@ class Imset:
             imarray_stack: numpy array of images of dimensions [H, W, n_images]
 
         """
-
+        # for massive images
+        Image.MAX_IMAGE_PIXELS = None
         for i, n in enumerate(numbers):
-            # for massive images
-            Image.MAX_IMAGE_PIXELS = None
-
 
             path=self.paths[n]
             #open as grayscale
