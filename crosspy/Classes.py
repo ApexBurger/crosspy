@@ -8,8 +8,8 @@ import functools
 import time
 import h5py
 import numpy as np
-import crosspy
 import os as o
+import crosspy
 
 
 class Imset:
@@ -152,7 +152,7 @@ class DIC:
 
     def __init__(self,images,roi,filter_settings,savingfolder=None):
         #if fed an Imset class
-        if isinstance(images,crosspy.Imset):
+        if isinstance(images,(crosspy.Imset,Imset)):
             if images.n_ims<1:
                 raise Exception('No images found!')
 

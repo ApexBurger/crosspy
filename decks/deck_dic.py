@@ -5,16 +5,14 @@
 #%%
 if __name__=='__main__':
     import os as o
-
     from pathlib import Path
     import time
     import numexpr
-
     import crosspy as xpy
     
     t0=time.time()
 
-    folder_path=Path(r'/Users/tom/Documents/GitHub/crosspy/data/Tom')
+    folder_path=Path(r'../data/Tom')
     Images = xpy.Imset(folder_path,'tif',[0,1])
 
     # # fft filter settings: high pass, high pass width, low pass, low pass width
@@ -27,7 +25,7 @@ if __name__=='__main__':
     # # run the dic on specified images within the stack, and get displacements:
     dic_1stpass.run_sequential()
     dic_1stpass.plot_displacements()
-
+    
     # # correct the images and instantiate a new DIC class
     corrected_images=dic_1stpass.correct(method='polynomial',printing=1)
 
