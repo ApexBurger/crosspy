@@ -12,7 +12,7 @@ if __name__=='__main__':
     
     t0=time.time()
 
-    folder_path=Path(r'../data/Tom')
+    folder_path=Path(r'../data/Tom') 
     Images = xpy.Imset(folder_path,'tif',[0,1])
 
     # # fft filter settings: high pass, high pass width, low pass, low pass width
