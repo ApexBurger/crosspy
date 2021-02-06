@@ -16,6 +16,7 @@ The general process of the method is outlined below
 
 """
 #%%
+
 def ROI_selector(a, b):
     """ This function selects a rectangular region of interest within the loaded images (a,b)
     """
@@ -48,6 +49,11 @@ def interp_subset(array,factor):
     image = np.where(image < 0, 0, image)
     return  image.astype(np.float32)
 
+def interp_subset_cv(array,factor):
+    dimx = int(array.shape[1]*factor)
+    dimy = int(array.shape[0]*factor)
+    image = cv.resize(array.astype(np.float32), ( dimx, dimy ), interpolation = cv.INTER_CUBIC )
+    return image
 
 def formmask(a, b, n, d):
     """ generate a mask
@@ -111,7 +117,7 @@ import crosspy
 from pathlib import Path
 from crosspy import DIC, Imset
 import os
-import cv2
+import cv2 as cv
 
 # folder path
 
@@ -123,7 +129,7 @@ Images = Imset(folder_path,'tif',[0,1])
 filter_settings=[4,2,15,8]
 images = Images.imload([0,1])
 
-roi = dict(size_pass = 32, overlap_percentage = 90, xcf_mesh=150)
+roi = dict(size_pass = 32, overlap_percentage = 90, xcf_mesh=200)
 dic_1stpass = DIC(Images,roi,filter_settings)
 
 dic_1stpass.roi
@@ -145,12 +151,13 @@ test=get_subset(d.ims,d.roi[0],d.ss_locations,n,1)
 #%%
 # attempt to upsample
 from scipy import interpolate
+import cv2 as cv
 
 z = ref
 
-f = 1
-a = interp_subset(ref,factor=f)
-b = interp_subset(test,factor=f)
+f = 2
+%timeit a = interp_subset(ref,factor=f)
+%timeit b = interp_subset_cv(test,factor=f)
 fig,ax = plt.subplots(1,2)
 
 ax[0].imshow(a)
@@ -253,39 +260,75 @@ def reg(a,b,f, method = 'cv.TM_SQDIFF_NORMED'):
     #     col_shift = 0
     #     row_shift = 0
     
-    return -col_shift/f, -row_shift/f, cc
+    return -col_shift/f, -row_shift/f, cc, res
 
 
-reg(ax,bx,f, method='cv.TM_CCOEFF_NORMED')
+f = 4
+ref_up = interp_subset_cv(ref,f).astype(np.float32)
+test_up = interp_subset_cv(test,f).astype(np.float32)
+
+dxf,dyf,ccf,res2 = reg(ref_up,test_up,f, method='cv.TM_SQDIFF_NORMED')
+
+dx1,dy1,cc1,res1 = reg(ref,test,1, method='cv.TM_SQDIFF_NORMED')
+
+fix,ax = plt.subplots(1,2,figsize=(10,20))
+
+ax[0].imshow(res2)
+ax[0].set_title("dx = {}, dy = {}, cc={}".format(dxf,dyf,ccf))
+ax[1].imshow(res1)
+ax[1].set_title("dx = {}, dy = {}, cc={}".format(dx1,dy1,cc1))
 # %%
 
-def warp_subset(x, subset):
-    u, v, dudx, dudy, dvdx, dvdy = x
+def fxcorr_cv(subset1,subset2,d):
+    """ This function uses openCV to upsample and correlate subsets
+    It is fast but the subpixel accuracy in inefficient as upsampling
+    is done in real space over the entire subset
+    
+    To improve, look at what ncorr does...
+    or, write a custom function which finds the interger shift location, then performs
+    a "mini" cross correlation on a smaller subset, upsampled
+    """
+    # upsampling factor
+    f = d.roi[2]/100
 
-    c = int(subset.shape[0]/2)
-    w = int(subset.shape[0]/2)
-    xs = np.arange(-w,w,1)
-    ys = xs
-    xx, yy = np.meshgrid(xs,ys)
+    # upsample subsets by bicubic interpolation
+    ref_up = interp_subset_cv(ref,f).astype(np.float32)
+    test_up = interp_subset_cv(test,f).astype(np.float32)
+
+
+    col_shift,row_shift,ccmax,_ = reg(ref_up,test_up,f, method='cv.TM_CCOEFF_NORMED')
+
+    return col_shift, row_shift, ccmax
+
+fxcorr_cv(ref,test,d)
+
+# def warp_subset(x, subset):
+#     u, v, dudx, dudy, dvdx, dvdy = x
+
+#     c = int(subset.shape[0]/2)
+#     w = int(subset.shape[0]/2)
+#     xs = np.arange(-w,w,1)
+#     ys = xs
+#     xx, yy = np.meshgrid(xs,ys)
     
     
-    xcur = xref + u
-    warped_subset = xcur
-    return warped_subset
+#     xcur = xref + u
+#     warped_subset = xcur
+#     return warped_subset
 
 
-c = int(ref.shape[0]/2)
-w = int(ref.shape[0]/2)
-xs = np.arange(-w,w,1)
-ys = xs
-xx, yy = np.meshgrid(xs,ys)
+# c = int(ref.shape[0]/2)
+# w = int(ref.shape[0]/2)
+# xs = np.arange(-w,w,1)
+# ys = xs
+# xx, yy = np.meshgrid(xs,ys)
 
-xcur = lambda xref,xc,yref,yc,u,dudx,dudy:\
-        xref+u+dudx(xref-xc)+dudy(yref-yc)
-ycur = lambda xref,xc,yref,yc,v,dvdy,dvdx:\
-        yref+v+dvdx(xref-xc)+dvdy(yref-yc)
+# xcur = lambda xref,xc,yref,yc,u,dudx,dudy:\
+#         xref+u+dudx(xref-xc)+dudy(yref-yc)
+# ycur = lambda xref,xc,yref,yc,v,dvdy,dvdx:\
+#         yref+v+dvdx(xref-xc)+dvdy(yref-yc)
 
-x_f = xcur(xx,0, )
+# x_f = xcur(xx,0, )
 
-plt.imshow(yy)
+# plt.imshow(yy)
 # %%

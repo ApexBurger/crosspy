@@ -6,6 +6,7 @@ import multiprocessing
 import pyfftw 
 import numexpr as ne
 from crosspy.ImagePreparation import get_subset
+import cv2 as cv
 
 def plan_ffts(d,ffttype='fftw_numpy'):
     
@@ -200,46 +201,118 @@ def freg(ROI_test,ROI_ref,XCF_roisize,XCF_mesh,data_fill,prepared_ffts):
 
     return col_shift, row_shift, CCmax#/np.sqrt(float(bf1*bf2))
 
-def fxcorr(subset1,subset2,d,prepared_ffts):
+def fxcorr(subset1,subset2,d,prepared_ffts, cormeth="efficient"):
+    if cormeth == "efficient":
+        forward_fft=prepared_ffts[0]
+        inverse_fft=prepared_ffts[1]
 
-    forward_fft=prepared_ffts[0]
-    inverse_fft=prepared_ffts[1]
+        roi=d.roi    
+        fftfil=d.fftfilter
+        hfil=d.hfilter
+        filters_settings=d.filter_settings
 
-    roi=d.roi    
-    fftfil=d.fftfilter
-    hfil=d.hfilter
-    filters_settings=d.filter_settings
+        #h-filter the subsets and generate the fft filter
+        hfil = 1. # THIS IS AN ATTEMPT TO REMOVE H FILTER FOR HEAVISIDE
+        subset1_filt=hfil*subset1
+        subset2_filt=hfil*subset2
+        
 
-    #h-filter the subsets and generate the fft filter
-    hfil = 1. # THIS IS AN ATTEMPT TO REMOVE H FILTER FOR HEAVISIDE
-    subset1_filt=hfil*subset1
-    subset2_filt=hfil*subset2
+        #FFT the subsets
+        f_s1=forward_fft(subset1_filt)
+        f_s2=forward_fft(subset2_filt)
+
+        fill1=(filters_settings[2]+filters_settings[3])
+        fill2=(roi[0]-(filters_settings[2]+filters_settings[3]-1))
+        fill3=roi[0]
+        data_fill=np.array([i for i in range(fill1)]+[i for i in range(fill2-1,fill3)])
+
+        #grab the reduced filter
+        fftfil_red=fftfil[data_fill,:]
+        fftfil_red=fftfil_red[:,data_fill]
+
+        #grab the reduced subsets
+        f_s1_red=f_s1[data_fill,:]
+        f_s1_red=f_s1_red[:,data_fill]
+
+        f_s2_red=f_s2[data_fill,:]
+        f_s2_red=f_s2_red[:,data_fill]
+
+        #perform the filtering (point-wise multiplication)
+        ROI_ref=f_s1_red*fftfil_red
+        ROI_test=f_s2_red*fftfil_red
+
+        col_shift, row_shift, ccmax = freg(ROI_test,ROI_ref,roi[0],roi[2],data_fill,prepared_ffts)
+
+    elif cormeth=="cv":
+        """ This function uses openCV to upsample and correlate subsets
+        It is fast but the subpixel accuracy is inefficient as upsampling
+        is done in real space over the entire subset
+        
+        To improve, look at what ncorr does...
+        or, write a custom function which finds the interger shift location, then performs
+        a "mini" cross correlation on a smaller subset, upsampled
+        """
+        # upsampling factor
+        f = d.roi[2]/100
+
+        # upsample subsets by bicubic interpolation
+        ref_up = interp_subset_cv(subset1,f).astype(np.float32)
+        test_up = interp_subset_cv(subset2,f).astype(np.float32)
+        # register shifts
+        col_shift,row_shift,ccmax,_ = reg_cv(ref_up,test_up,f, method='cv.TM_SQDIFF_NORMED')
+
+    return col_shift, row_shift, ccmax
+
+
+def reg_cv(a,b,f, method):
+    """registers shifts from correlogram
+    """
+    res = correlogram_cv(a, b, method)
     
+    if method == 'cv.TM_SQDIFF_NORMED' or method == 'cv.TM_SQDIFF':
+        cc = np.abs(np.amin(res))
+        loc=np.argmin(res)
+        loc1,loc2=np.unravel_index(loc, res.shape)
 
-    #FFT the subsets
-    f_s1=forward_fft(subset1_filt)
-    f_s2=forward_fft(subset2_filt)
+        row_shift=loc1-a.shape[0]
+        col_shift=loc2-a.shape[0]
+    else:
+        cc = np.abs(np.max(res))
+        loc=np.argmax(res)
+        loc1,loc2=np.unravel_index(loc, res.shape)
 
-    fill1=(filters_settings[2]+filters_settings[3])
-    fill2=(roi[0]-(filters_settings[2]+filters_settings[3]-1))
-    fill3=roi[0]
-    data_fill=np.array([i for i in range(fill1)]+[i for i in range(fill2-1,fill3)])
+        row_shift=loc1-a.shape[0]
+        col_shift=loc2-a.shape[0]
 
-    #grab the reduced filter
-    fftfil_red=fftfil[data_fill,:]
-    fftfil_red=fftfil_red[:,data_fill]
+    if abs(col_shift/f) > a.shape[0] or abs(row_shift/f) > a.shape[1]:
+        col_shift = 0
+        row_shift = 0
+        print("Subset shift greater than subset size, setting to 0")
+    
+    return -col_shift/f, -row_shift/f, cc, res
 
-    #grab the reduced subsets
-    f_s1_red=f_s1[data_fill,:]
-    f_s1_red=f_s1_red[:,data_fill]
+def interp_subset_cv(array,factor):
+    """
+    Upsamples input array using bicubic interpolation
+    """
+    dimx = int(array.shape[1]*factor)
+    dimy = int(array.shape[0]*factor)
+    image = cv.resize(array.astype(np.float32), ( dimx, dimy ), interpolation = cv.INTER_CUBIC )
+    return image
 
-    f_s2_red=f_s2[data_fill,:]
-    f_s2_red=f_s2_red[:,data_fill]
+def correlogram_cv(a, b, method):
+    """
+        Returns correlogram of a and b arrays using openCV library
+        This library is extremely efficient.
+        
+    """
+    # zero pad reference image 
+    img = np.pad(a, a.shape[0])
+    img2 = img.copy()
+    template = b
+    w, h = template.shape[::-1]
+    img = img2.copy()
+    meth = eval(method)
 
-    #perform the filtering (point-wise multiplication)
-    ROI_ref=f_s1_red*fftfil_red
-    ROI_test=f_s2_red*fftfil_red
-
-    col_shift, row_shift, CCmax = freg(ROI_test,ROI_ref,roi[0],roi[2],data_fill,prepared_ffts)
-    return col_shift, row_shift, CCmax
-
+    # Obtain correlogram through square-difference normed
+    return cv.matchTemplate(img,template,meth)

@@ -157,6 +157,7 @@ def reg(a,b, method = 'cv.TM_SQDIFF_NORMED'):
     if abs(col_shift) > a.shape[0]/2 or abs(row_shift) > a.shape[1]/2:
         col_shift = 0
         row_shift = 0
+        print("Subset shift greater than subset size")
     
     return col_shift, row_shift, cc
 
@@ -184,7 +185,7 @@ def local_minima(array2d):
                    ]
     return local_minima
 
-def hs_corr(x, a, b, dic, prepared_ffts):
+def hs_corr(x, a, b, dic, prepared_ffts, cormeth="efficient"):
     # unpack vector
     r, theta = x
     # generate heaviside filter
@@ -201,10 +202,16 @@ def hs_corr(x, a, b, dic, prepared_ffts):
     ch = a * hsfilter_inv
     dh = b * hsfilter_inv
 
-    results = fxcorr(ah, bh, dic, prepared_ffts)
-    results_inv = fxcorr(ch, dh, dic, prepared_ffts)
 
-    # return vectorised result containing dx,dy,cc
+    if cormeth == "cv":
+        # NEW: fcorr_cv does NCC with subpixel int
+        results = fxcorr(ah, bh, dic,prepared_ffts,cormeth)
+        results_inv = fxcorr(ch, dh, dic,prepared_ffts,cormeth)
+    elif cormeth == "efficient":
+        results = fxcorr(ah, bh, dic, prepared_ffts,cormeth)
+        results_inv = fxcorr(ch, dh, dic, prepared_ffts,cormeth)
+
+    # return vectorised result containing dxc,dyc,ccc,dxe,dye,cce
     return np.concatenate((results,results_inv),axis=None)
 
 def hs_corr_norm(x, a, b, d, prepared_ffts, method='cv.TM_SQDIFF_NORMED'):
@@ -281,51 +288,6 @@ def disc_locate(a, b, mins, d, prepared_ffts):
 
     return r, theta, jump
 
-def correlate_subsets(a, b, d, prepared_ffts):
-    """ Returns dx, dy, cc, hson, r, theta, jump
-    Locates theta based on vector drawn between peak locations in correlogram
-    
-    Works well for test data set but is not able to pick up multiple peaks in real datasets
-
-    """ 
-    # This library is extremely efficient.
-
-    # pre-allocate output array
-    out = np.full((7,),0, dtype=np.float64)
-
-    # Obtain correlogram through square-difference normed
-    res = correlogram(a, b,'cv.TM_SQDIFF_NORMED')
-
-    # find local minima
-    mins = local_minima(res)
-    if len(mins) == 1:
-        # No discontinuity -> try freg
-        out[:3] = fxcorr(a,b,d,prepared_ffts)
-    elif len(mins) == 2:
-        # Single discontinuity -> try finding peak
-        # mininmize
-        x = disc_locate(a, b, mins, d, prepared_ffts)
-        r, theta , jump = x
-        dx,dy,cc,dxi,dyi,cci = hs_corr([r,theta], a, b, d, prepared_ffts)
-        j = np.sqrt((dx-dxi)**2 + (dy-dyi)**2)
-        out = np.array([dx,dy,cc,r,theta,True,j])
-        # print(j/jump)
-    elif len(mins) > 2:
-        # Multiple discontinuities - TO DO
-        mins = mins[:2]
-        # Single discontinuity -> try finding peak
-        # mininmize
-        x = disc_locate(a, b, mins, d, prepared_ffts)
-        r, theta, jump = x
-        dx,dy,cc,dxi,dyi,cci = hs_corr([r,theta], a, b, d, prepared_ffts)
-        j = np.sqrt((dx-dxi)**2 + (dy-dyi)**2)
-        out = np.array([dx,dy,cc,r,theta,True,j])
-    else:
-        # No correlation found
-        out = out
-
-    return out
-
 def disc_locate_angular(a, b, d, prepared_ffts):
     """ Searches in fine theta space to locate a discontinuity
         1. Searches for min CC value in circle near centre (notice sqdiff has good correlation for low values)
@@ -382,7 +344,7 @@ def disc_locate_angular(a, b, d, prepared_ffts):
     jump = np.sqrt((x1-x0)**2 + (y1-y0)**2)
     return r_sol, t_sol, jump
 
-def minimise_rt_lstsq(a, b, cc_thresh, d, prepared_ffts):
+def minimise_rt_lstsq(a, b, cc_thresh, d, prepared_ffts,cormeth="efficient"):
 
     # obtain untreated dx,dy,
     dxu, dyu, ccu = reg(a, b, method="cv.TM_SQDIFF_NORMED")
@@ -398,17 +360,17 @@ def minimise_rt_lstsq(a, b, cc_thresh, d, prepared_ffts):
         j = np.sqrt(u**2+v**2)
         if j >= 1:
             # If there is a jump accept treatment
-            dx , dy, _, dxi, dyi, _ = hs_corr(x, a, b, d, prepared_ffts)
+            dx , dy, _, dxi, dyi, _ = hs_corr(x, a, b, d, prepared_ffts, cormeth=cormeth)
             r = float(r)
             theta = float(theta)
             out = [dx, dy, cc, r, theta, True, j]
         elif j < 1:
             # If no jump, reject treatment
-            dx, dy, _ = fxcorr(a,b,d,prepared_ffts)
+            dx, dy, _ = fxcorr(a,b,d,prepared_ffts,cormeth)
             out = [dx, dy, ccu, 0., 0., False, 0.]
 
         return out
     else:
-        dxu,dyu,cc = fxcorr(a, b, d, prepared_ffts)
+        dxu,dyu,cc = fxcorr(a, b, d,prepared_ffts,cormeth)
         out = [dxu,dyu,ccu,False,False,False,False]
         return out

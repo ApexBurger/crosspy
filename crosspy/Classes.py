@@ -164,7 +164,7 @@ class DIC:
         else:
             self.ims=images
             self.n_ims=images.shape[2]
-            self.folder=savingfolder
+            self.folder = savingfolder
         
         self.roi=list([roi['size_pass'],roi['overlap_percentage'],roi['xcf_mesh']])
         self.n_rows,self.n_cols,self.ss_locations,self.ss_spacing=crosspy.gen_ROIs(self.ims.shape[0:2],self.roi)
@@ -176,7 +176,7 @@ class DIC:
         self.x_pos = self.ss_locations[:,0].reshape(self.n_rows,self.n_cols)+roi['size_pass']/2
         self.y_pos = self.ss_locations[:,1].reshape(self.n_rows,self.n_cols)+roi['size_pass']/2
 
-    def run_sequential(self,cores=1, ffttype='fftw_numpy', hs=False, cc_t=0., px_size=None):
+    def run_sequential(self,cores=1, ffttype='fftw_numpy', hs=False, cc_t=0., px_size=None, cormeth="efficient"):
         """
         Run DIC with reference images as previous in the stack. Generates attributes for this class.
 
@@ -185,7 +185,9 @@ class DIC:
             ffttype (str) - one of 'fftw_numpy', 'fftw_scipy', or 'numpy' - which FFT implementation to use.
             hs (bool) - run Heaviside or not.
             cc_t (float) - cross-correlation peak height threshold.
-            px_size = pixel size in length used to plot j maps
+            px_size (float) = pixel size in length used to plot j maps
+            cormeth (str) = method of correlation in disc cont, either "efficient" or "cv" -> cv allows for NSQ and subpixel
+
 
         Outputs
             self.rd_maps
@@ -215,7 +217,7 @@ class DIC:
             for i in range(0,self.n_ims-1):
                 print('Running sequential DIC on image pair '+str(i+1)+' of '+str(self.n_ims-1)+suffix+', total subsets per image: '+str(self.n_subsets)) 
                 dx_maps[:,:,i],dy_maps[:,:,i],ph_maps[:,:,i],rd_maps[:,:,i],th_maps[:,:,i],hs_maps[:,:,i],js_maps[:,:,i] \
-                = crosspy.run_DIC(d=self, imnos=[i,i+1],cores=cores, hs=True, cc_t=cc_t)
+                = crosspy.run_DIC(d=self, imnos=[i,i+1],cores=cores, hs=True, cc_t=cc_t,cormeth=cormeth)
 
             self.rd_maps = rd_maps
             self.th_maps = th_maps
@@ -239,7 +241,7 @@ class DIC:
 
         #return dx_maps, dy_maps, ph_maps
 
-    def run_cumulative(self,cores=1,ffttype='fftw_numpy', hs=False, cc_t=0., px_size=None):
+    def run_cumulative(self,cores=1,ffttype='fftw_numpy', hs=False, cc_t=0., px_size=None,cormeth="efficient"):
         """
         Run DIC with first image as reference. Generates attributes for this class.
 
@@ -278,7 +280,7 @@ class DIC:
             for i in range(0,self.n_ims-1):
                 print('Running sequential DIC on image pair ' +str(i+1)+' of '+str(self.n_ims-1)+suffix +', total subsets per image: ' + str(self.n_subsets))
                 dx_maps[:,:,i],dy_maps[:,:,i],ph_maps[:,:,i],rd_maps[:,:,i],th_maps[:,:,i],hs_maps[:,:,i],js_maps[:,:,i] \
-                = crosspy.run_DIC(d=self, imnos=[0,i+1],cores=cores, hs=True, cc_t=cc_t)
+                = crosspy.run_DIC(d=self, imnos=[0,i+1],cores=cores, hs=True, cc_t=cc_t,cormeth=cormeth)
 
             self.rd_maps = rd_maps
             self.th_maps = th_maps
