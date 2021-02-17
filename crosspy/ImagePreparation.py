@@ -20,12 +20,12 @@ def gen_ROIs(imshape,roi):
     n_col_sets=int((cols-col_remainder)/spacing) #number of spacings in horizontal direction
     
     #ensure there is space for all the subsets
-    while n_col_sets*spacing+size_pass>cols:
+    while (n_col_sets-1)*spacing+size_pass>cols:
         n_col_sets=n_col_sets-1
 
     n_row_sets=int((rows-row_remainder)/spacing) #number of spacings in vertical direction
 
-    while n_row_sets*spacing+size_pass>rows:
+    while (n_row_sets-1)*spacing+size_pass>rows:
         n_row_sets=n_row_sets-1
 
     #generate an array of subset locations [top L corner row, top L corner col] - can get bot R row and col from known subset size
