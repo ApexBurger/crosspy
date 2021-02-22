@@ -259,7 +259,7 @@ def fxcorr(subset1,subset2,d,prepared_ffts, cormeth="efficient"):
         ref_up = interp_subset_cv(subset1,f).astype(np.float32)
         test_up = interp_subset_cv(subset2,f).astype(np.float32)
         # register shifts
-        col_shift,row_shift,ccmax,_ = reg_cv(ref_up,test_up,f, method='cv.TM_SQDIFF_NORMED')
+        col_shift,row_shift,ccmax,_ = reg_cv(ref_up,test_up,f, method='cv.TM_CCOEFF_NORMED')
     elif cormeth == "pixelic":
         # register shifts
         col_shift,row_shift,ccmax,_ = reg_cv(subset1,subset2,f=1.0, method='cv.TM_CCOEFF_NORMED')
