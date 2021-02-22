@@ -16,5 +16,5 @@ def subset_compare(subset_n,d,imnos,prepared_ffts,hs=False,cc_t=0.,cormeth="effi
         results = minimise_rt_lstsq(ref,test,cc_t, d, prepared_ffts,cormeth)
         return results
     else:
-        dxs,dys,phs= fxcorr(ref,test,d,prepared_ffts)
+        dxs,dys,phs= fxcorr(ref,test,d,prepared_ffts,cormeth)
         return dxs,dys,phs

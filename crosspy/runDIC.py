@@ -45,7 +45,7 @@ def run_DIC(d,imnos=[0,1],hs=False, cc_t=0., cores=1,ffttype='fftw_numpy',cormet
         results = np.empty(shape=(d.n_subsets,9))
         # main loop
         results = Parallel(n_jobs=cores, verbose=5)(delayed(subset_compare) \
-            (subset_n=i, d=d, imnos=imnos, prepared_ffts=prepared_ffts, hs=False) for i in range(d.n_subsets))
+            (subset_n=i, d=d, imnos=imnos, prepared_ffts=prepared_ffts, hs=False, cormeth=cormeth) for i in range(d.n_subsets))
 
         dxs,dys,phs = zip(*results)
 

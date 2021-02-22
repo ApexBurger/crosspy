@@ -232,7 +232,7 @@ class DIC:
         else:
             for i in range(0,self.n_ims-1):
                 print('Running sequential DIC on image pair ' +str(i+1)+' of '+str(self.n_ims-1)+suffix)
-                dx_maps[:,:,i],dy_maps[:,:,i],ph_maps[:,:,i] = crosspy.run_DIC(self, imnos=[i,i+1], cores=cores)
+                dx_maps[:,:,i],dy_maps[:,:,i],ph_maps[:,:,i] = crosspy.run_DIC(self, imnos=[i,i+1], cores=cores, cormeth=cormeth)
 
         self.ph_maps=ph_maps
         self.dx_maps=dx_maps
@@ -292,9 +292,9 @@ class DIC:
                 self.js_maps = js_maps * px_size
 
         else:
-            for i in range(0,self.n_ims):
+            for i in range(0,self.n_ims-1):
                 print('Running cumulative DIC on image pair ' +str(i+1)+' of '+str(self.n_ims-1)+suffix)
-                dx_maps[:,:,i],dy_maps[:,:,i],ph_maps[:,:,i]=crosspy.run_DIC(self,[0,i+1], cores=cores)
+                dx_maps[:,:,i],dy_maps[:,:,i],ph_maps[:,:,i]=crosspy.run_DIC(self,[0,i+1], cores=cores, cormeth=cormeth)
 
         self.ph_maps=ph_maps
         self.dx_maps=dx_maps
